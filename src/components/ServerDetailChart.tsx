@@ -292,6 +292,7 @@ function CpuChart({ now, data, messageHistory }: { now: number; data: NezhaServe
   const chartConfig = {
     cpu: {
       label: "CPU",
+      color: "hsl(var(--chart-1))",
     },
   } satisfies ChartConfig
 
@@ -336,7 +337,7 @@ function CpuChart({ now, data, messageHistory }: { now: number; data: NezhaServe
                 content={
                   <ChartTooltipContent
                     labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")}
-                    formatter={(value) => `${Number(value).toFixed(2)}%`}
+                    valueFormatter={(value) => `${Number(value).toFixed(2)}%`}
                   />
                 }
               />
@@ -530,9 +531,11 @@ function MemChart({ now, data, messageHistory }: { now: number; data: NezhaServe
   const chartConfig = {
     mem: {
       label: "RAM",
+      color: "hsl(var(--chart-8))",
     },
     swap: {
       label: "Swap",
+      color: "hsl(var(--chart-10))",
     },
   } satisfies ChartConfig
 
@@ -602,8 +605,9 @@ function MemChart({ now, data, messageHistory }: { now: number; data: NezhaServe
                 content={
                   <ChartTooltipContent
                     labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")}
-                    formatter={(_value, name, item) => {
-                      const bytes = name === "mem" ? item.payload.mem_used : item.payload.swap_used
+                    valueFormatter={(_value, name, _item, _index, payload) => {
+                      const data = payload as memChartData
+                      const bytes = name === "mem" ? data.mem_used : data.swap_used
                       return bytes === 0 ? "0" : formatBytes(bytes, 1)
                     }}
                   />
@@ -685,6 +689,7 @@ function DiskChart({ now, data, messageHistory }: { now: number; data: NezhaServ
   const chartConfig = {
     disk: {
       label: "Disk",
+      color: "hsl(var(--chart-5))",
     },
   } satisfies ChartConfig
 
@@ -734,7 +739,9 @@ function DiskChart({ now, data, messageHistory }: { now: number; data: NezhaServ
                 content={
                   <ChartTooltipContent
                     labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")}
-                    formatter={(_value, _name, item) => formatBytes(item.payload.disk_used, 2)}
+                    valueFormatter={(_value, _name, _item, _index, payload) =>
+                      formatBytes((payload as diskChartData).disk_used, 2)
+                    }
                   />
                 }
               />
@@ -885,21 +892,14 @@ function NetworkChart({ now, data, messageHistory }: { now: number; data: NezhaS
                 cursor={false}
                 content={
                   <ChartTooltipContent
-                    indicator="dot"
                     labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")}
-                    formatter={(value, name) => {
+                    valueFormatter={(value) => {
                       const v = Number(value)
-                      const formattedValue = v >= 1024
-                        ? `${(v / 1024).toFixed(2)} GiB/s`
+                      return v >= 1024
+                        ? `${(v / 1024).toFixed(2)} G/s`
                         : v >= 1
-                          ? `${v.toFixed(2)} MiB/s`
-                          : `${(v * 1024).toFixed(2)} KiB/s`
-                      return (
-                        <div className="flex flex-1 items-center justify-between leading-none">
-                          <span className="text-muted-foreground">{name === "upload" ? "Up" : "Down"}</span>
-                          <span className="ml-2 font-medium text-foreground tabular-nums">{formattedValue}</span>
-                        </div>
-                      )
+                          ? `${v.toFixed(2)} M/s`
+                          : `${(v * 1024).toFixed(2)} K/s`
                     }}
                   />
                 }

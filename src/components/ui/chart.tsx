@@ -97,6 +97,7 @@ const ChartTooltipContent = React.forwardRef<
       indicator?: "line" | "dot" | "dashed"
       nameKey?: string
       labelKey?: string
+      valueFormatter?: (value: number, name: string, item: unknown, index: number, payload: unknown) => React.ReactNode
     }
 >(
   (
@@ -114,6 +115,7 @@ const ChartTooltipContent = React.forwardRef<
       color,
       nameKey,
       labelKey,
+      valueFormatter,
     },
     ref,
   ) => {
@@ -150,7 +152,7 @@ const ChartTooltipContent = React.forwardRef<
       <div
         ref={ref}
         className={cn(
-          "grid min-w-[8rem] items-start gap-1.5 rounded-[4px] border bg-card text-card-foreground shadow-lg shadow-neutral-200/40 dark:shadow-none px-2.5 py-1.5 text-xs",
+          "grid min-w-[8rem] items-start gap-1.5 rounded-[6px] border bg-card text-card-foreground shadow-lg shadow-neutral-200/40 dark:shadow-none px-2.5 py-1.5 text-xs",
           className,
         )}
       >
@@ -198,7 +200,13 @@ const ChartTooltipContent = React.forwardRef<
                         {nestLabel ? tooltipLabel : null}
                         <span className="text-muted-foreground">{itemConfig?.label || item.name}</span>
                       </div>
-                      {item.value && <span className="font-mono font-medium tabular-nums text-foreground">{item.value.toLocaleString()}</span>}
+                      {item.value !== undefined && (
+                        <span className="font-mono font-medium tabular-nums text-foreground">
+                          {valueFormatter
+                            ? valueFormatter(item.value as number, item.name as string, item, index, item.payload)
+                            : item.value.toLocaleString()}
+                        </span>
+                      )}
                     </div>
                   </>
                 )}
