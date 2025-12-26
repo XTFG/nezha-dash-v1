@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card"
-import { ChartConfig, ChartContainer } from "@/components/ui/chart"
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { useWebSocketContext } from "@/hooks/use-websocket-context"
 import { formatBytes } from "@/lib/format"
 import { cn, formatNezhaInfo, formatRelativeTime } from "@/lib/utils"
@@ -219,6 +219,10 @@ function GpuChart({
                 tickFormatter={(value) => formatRelativeTime(value)}
               />
               <YAxis tickLine={false} axisLine={false} mirror={true} tickMargin={-15} domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
+              <ChartTooltip
+                cursor={false}
+                content={<ChartTooltipContent labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")} />}
+              />
               <Area isAnimationActive={false} dataKey="gpu" type="step" fill="hsl(var(--chart-3))" fillOpacity={0.3} stroke="hsl(var(--chart-3))" />
             </AreaChart>
           </ChartContainer>
@@ -324,6 +328,10 @@ function CpuChart({ now, data, messageHistory }: { now: number; data: NezhaServe
                 tickFormatter={(value) => formatRelativeTime(value)}
               />
               <YAxis tickLine={false} axisLine={false} mirror={true} tickMargin={-15} domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
+              <ChartTooltip
+                cursor={false}
+                content={<ChartTooltipContent labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")} />}
+              />
               <Area isAnimationActive={false} dataKey="cpu" type="step" fill="hsl(var(--chart-1))" fillOpacity={0.3} stroke="hsl(var(--chart-1))" />
             </AreaChart>
           </ChartContainer>
@@ -436,6 +444,14 @@ function ProcessChart({ now, data, messageHistory }: { now: number; data: NezhaS
                 fill="hsl(var(--chart-2))"
                 fillOpacity={0.3}
                 stroke="hsl(var(--chart-2))"
+              />
+              <ChartTooltip
+                cursor={false}
+                content={
+                  <ChartTooltipContent
+                    labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")}
+                  />
+                }
               />
             </AreaChart>
           </ChartContainer>
@@ -571,6 +587,10 @@ function MemChart({ now, data, messageHistory }: { now: number; data: NezhaServe
                 tickFormatter={(value) => formatRelativeTime(value)}
               />
               <YAxis tickLine={false} axisLine={false} mirror={true} tickMargin={-15} domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
+              <ChartTooltip
+                cursor={false}
+                content={<ChartTooltipContent labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")} />}
+              />
               <Area isAnimationActive={false} dataKey="mem" type="step" fill="hsl(var(--chart-8))" fillOpacity={0.3} stroke="hsl(var(--chart-8))" />
               <Area
                 isAnimationActive={false}
@@ -690,6 +710,10 @@ function DiskChart({ now, data, messageHistory }: { now: number; data: NezhaServ
                 tickFormatter={(value) => formatRelativeTime(value)}
               />
               <YAxis tickLine={false} axisLine={false} mirror={true} tickMargin={-15} domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
+              <ChartTooltip
+                cursor={false}
+                content={<ChartTooltipContent labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")} />}
+              />
               <Area isAnimationActive={false} dataKey="disk" type="step" fill="hsl(var(--chart-5))" fillOpacity={0.3} stroke="hsl(var(--chart-5))" />
             </AreaChart>
           </ChartContainer>
@@ -831,6 +855,19 @@ function NetworkChart({ now, data, messageHistory }: { now: number; data: NezhaS
                 domain={[1, maxDownload]}
                 tickFormatter={(value) => `${value.toFixed(0)}M/s`}
               />
+              <ChartTooltip
+                cursor={false}
+                content={
+                  <ChartTooltipContent
+                    labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")}
+                    formatter={(value) => {
+                      if (typeof value === "number") {
+                        return value >= 1024 ? `${(value / 1024).toFixed(2)}G/s` : value >= 1 ? `${value.toFixed(2)}M/s` : `${(value * 1024).toFixed(2)}K/s`
+                      }
+                    }}
+                  />
+                }
+              />
               <Line isAnimationActive={false} dataKey="upload" type="linear" stroke="hsl(var(--chart-1))" strokeWidth={1} dot={false} />
               <Line isAnimationActive={false} dataKey="download" type="linear" stroke="hsl(var(--chart-4))" strokeWidth={1} dot={false} />
             </LineChart>
@@ -952,6 +989,10 @@ function ConnectChart({ now, data, messageHistory }: { now: number; data: NezhaS
                 tickFormatter={(value) => formatRelativeTime(value)}
               />
               <YAxis tickLine={false} axisLine={false} mirror={true} tickMargin={-15} type="number" interval="preserveStartEnd" />
+              <ChartTooltip
+                cursor={false}
+                content={<ChartTooltipContent labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")} />}
+              />
               <Line isAnimationActive={false} dataKey="tcp" type="linear" stroke="hsl(var(--chart-1))" strokeWidth={1} dot={false} />
               <Line isAnimationActive={false} dataKey="udp" type="linear" stroke="hsl(var(--chart-4))" strokeWidth={1} dot={false} />
             </LineChart>
