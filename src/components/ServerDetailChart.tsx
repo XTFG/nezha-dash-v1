@@ -72,7 +72,7 @@ export default function ServerDetailChart({ server_id }: { server_id: string }) 
   const gpuList = server.host.gpu || []
 
   return (
-    <section className="grid md:grid-cols-2 lg:grid-cols-3 grid-cols-1 gap-3 server-charts">
+    <section className="grid md:grid-cols-2 lg:grid-cols-3 grid-cols-1 gap-3 items-end server-charts">
       <CpuChart now={nezhaWsData.now} data={server} messageHistory={messageHistory} />
       {gpuStats.length >= 1 && gpuList.length === gpuStats.length ? (
         gpuList.map((gpu, index) => (
@@ -558,7 +558,7 @@ function MemChart({ now, data, messageHistory }: { now: number; data: NezhaServe
               <div className="flex text-[11px] font-medium items-center gap-2">
                 {data.host.swap_total ? (
                   <>
-                    swap: {formatBytes(data.state.swap_used)} / {formatBytes(data.host.swap_total)}
+                    Swap: {formatBytes(data.state.swap_used)}
                   </>
                 ) : (
                   <>no swap</>
