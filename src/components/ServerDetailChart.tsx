@@ -29,12 +29,15 @@ type processChartData = {
 type diskChartData = {
   timeStamp: string
   disk: number
+  disk_used: number
 }
 
 type memChartData = {
   timeStamp: string
   mem: number
   swap: number
+  mem_used: number
+  swap_used: number
 }
 
 type networkChartData = {
@@ -330,7 +333,12 @@ function CpuChart({ now, data, messageHistory }: { now: number; data: NezhaServe
               <YAxis tickLine={false} axisLine={false} mirror={true} tickMargin={-15} domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
               <ChartTooltip
                 cursor={false}
-                content={<ChartTooltipContent labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")} />}
+                content={
+                  <ChartTooltipContent
+                    labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")}
+                    formatter={(value) => `${Number(value).toFixed(2)}%`}
+                  />
+                }
               />
               <Area isAnimationActive={false} dataKey="cpu" type="step" fill="hsl(var(--chart-1))" fillOpacity={0.3} stroke="hsl(var(--chart-1))" />
             </AreaChart>
@@ -398,7 +406,7 @@ function ProcessChart({ now, data, messageHistory }: { now: number; data: NezhaS
 
   const chartConfig = {
     process: {
-      label: "Process",
+      label: "Proc",
     },
   } satisfies ChartConfig
 
@@ -484,6 +492,8 @@ function MemChart({ now, data, messageHistory }: { now: number; data: NezhaServe
             timeStamp: wsData.now.toString(),
             mem,
             swap,
+            mem_used: server.state.mem_used,
+            swap_used: server.state.swap_used,
           }
         })
         .filter((item): item is memChartData => item !== null)
@@ -503,11 +513,11 @@ function MemChart({ now, data, messageHistory }: { now: number; data: NezhaServe
         let newData = [] as memChartData[]
         if (prevData.length === 0) {
           newData = [
-            { timeStamp: timestamp, mem, swap },
-            { timeStamp: timestamp, mem, swap },
+            { timeStamp: timestamp, mem, swap, mem_used: data.state.mem_used, swap_used: data.state.swap_used },
+            { timeStamp: timestamp, mem, swap, mem_used: data.state.mem_used, swap_used: data.state.swap_used },
           ]
         } else {
-          newData = [...prevData, { timeStamp: timestamp, mem, swap }]
+          newData = [...prevData, { timeStamp: timestamp, mem, swap, mem_used: data.state.mem_used, swap_used: data.state.swap_used }]
           if (newData.length > 30) {
             newData.shift()
           }
@@ -519,7 +529,7 @@ function MemChart({ now, data, messageHistory }: { now: number; data: NezhaServe
 
   const chartConfig = {
     mem: {
-      label: "Mem",
+      label: "RAM",
     },
     swap: {
       label: "Swap",
@@ -589,7 +599,15 @@ function MemChart({ now, data, messageHistory }: { now: number; data: NezhaServe
               <YAxis tickLine={false} axisLine={false} mirror={true} tickMargin={-15} domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
               <ChartTooltip
                 cursor={false}
-                content={<ChartTooltipContent labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")} />}
+                content={
+                  <ChartTooltipContent
+                    labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")}
+                    formatter={(_value, name, item) => {
+                      const bytes = name === "mem" ? item.payload.mem_used : item.payload.swap_used
+                      return bytes === 0 ? "0" : formatBytes(bytes, 1)
+                    }}
+                  />
+                }
               />
               <Area isAnimationActive={false} dataKey="mem" type="step" fill="hsl(var(--chart-8))" fillOpacity={0.3} stroke="hsl(var(--chart-8))" />
               <Area
@@ -630,6 +648,7 @@ function DiskChart({ now, data, messageHistory }: { now: number; data: NezhaServ
           return {
             timeStamp: wsData.now.toString(),
             disk,
+            disk_used: server.state.disk_used,
           }
         })
         .filter((item): item is diskChartData => item !== null)
@@ -649,11 +668,11 @@ function DiskChart({ now, data, messageHistory }: { now: number; data: NezhaServ
         let newData = [] as diskChartData[]
         if (prevData.length === 0) {
           newData = [
-            { timeStamp: timestamp, disk },
-            { timeStamp: timestamp, disk },
+            { timeStamp: timestamp, disk, disk_used: data.state.disk_used },
+            { timeStamp: timestamp, disk, disk_used: data.state.disk_used },
           ]
         } else {
-          newData = [...prevData, { timeStamp: timestamp, disk }]
+          newData = [...prevData, { timeStamp: timestamp, disk, disk_used: data.state.disk_used }]
           if (newData.length > 30) {
             newData.shift()
           }
@@ -712,7 +731,12 @@ function DiskChart({ now, data, messageHistory }: { now: number; data: NezhaServ
               <YAxis tickLine={false} axisLine={false} mirror={true} tickMargin={-15} domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
               <ChartTooltip
                 cursor={false}
-                content={<ChartTooltipContent labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")} />}
+                content={
+                  <ChartTooltipContent
+                    labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")}
+                    formatter={(_value, _name, item) => formatBytes(item.payload.disk_used, 2)}
+                  />
+                }
               />
               <Area isAnimationActive={false} dataKey="disk" type="step" fill="hsl(var(--chart-5))" fillOpacity={0.3} stroke="hsl(var(--chart-5))" />
             </AreaChart>
@@ -787,10 +811,12 @@ function NetworkChart({ now, data, messageHistory }: { now: number; data: NezhaS
 
   const chartConfig = {
     upload: {
-      label: "Upload",
+      label: "Up",
+      color: "hsl(var(--chart-1))",
     },
     download: {
-      label: "Download",
+      label: "Down",
+      color: "hsl(var(--chart-4))",
     },
   } satisfies ChartConfig
 
@@ -859,11 +885,21 @@ function NetworkChart({ now, data, messageHistory }: { now: number; data: NezhaS
                 cursor={false}
                 content={
                   <ChartTooltipContent
+                    indicator="dot"
                     labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")}
-                    formatter={(value) => {
-                      if (typeof value === "number") {
-                        return value >= 1024 ? `${(value / 1024).toFixed(2)}G/s` : value >= 1 ? `${value.toFixed(2)}M/s` : `${(value * 1024).toFixed(2)}K/s`
-                      }
+                    formatter={(value, name) => {
+                      const v = Number(value)
+                      const formattedValue = v >= 1024
+                        ? `${(v / 1024).toFixed(2)} GiB/s`
+                        : v >= 1
+                          ? `${v.toFixed(2)} MiB/s`
+                          : `${(v * 1024).toFixed(2)} KiB/s`
+                      return (
+                        <div className="flex flex-1 items-center justify-between leading-none">
+                          <span className="text-muted-foreground">{name === "upload" ? "Up" : "Down"}</span>
+                          <span className="ml-2 font-medium text-foreground tabular-nums">{formattedValue}</span>
+                        </div>
+                      )
                     }}
                   />
                 }
