@@ -72,7 +72,7 @@ export default function ServerDetailChart({ server_id }: { server_id: string }) 
   const gpuList = server.host.gpu || []
 
   return (
-    <section className="grid md:grid-cols-2 lg:grid-cols-3 grid-cols-1 gap-3 items-end server-charts">
+    <section className="grid md:grid-cols-2 lg:grid-cols-3 grid-cols-1 gap-3 server-charts">
       <CpuChart now={nezhaWsData.now} data={server} messageHistory={messageHistory} />
       {gpuStats.length >= 1 && gpuList.length === gpuStats.length ? (
         gpuList.map((gpu, index) => (
@@ -182,11 +182,11 @@ function GpuChart({
 
   return (
     <Card
-      className={cn({
+      className={cn("flex flex-col", {
         "bg-card/70": customBackgroundImage,
       })}
     >
-      <CardContent className="px-6 py-3">
+      <CardContent className="px-6 py-3 mt-auto">
         <section className="flex flex-col gap-1">
           <div className="flex items-center justify-between">
             <section className="flex flex-col items-center gap-2">
@@ -294,11 +294,11 @@ function CpuChart({ now, data, messageHistory }: { now: number; data: NezhaServe
 
   return (
     <Card
-      className={cn({
+      className={cn("flex flex-col", {
         "bg-card/70": customBackgroundImage,
       })}
     >
-      <CardContent className="px-6 py-3">
+      <CardContent className="px-6 py-3 mt-auto">
         <section className="flex flex-col gap-1">
           <div className="flex items-center justify-between">
             <p className="text-md font-medium">CPU</p>
@@ -404,11 +404,11 @@ function ProcessChart({ now, data, messageHistory }: { now: number; data: NezhaS
 
   return (
     <Card
-      className={cn({
+      className={cn("flex flex-col", {
         "bg-card/70": customBackgroundImage,
       })}
     >
-      <CardContent className="px-6 py-3">
+      <CardContent className="px-6 py-3 mt-auto">
         <section className="flex flex-col gap-1">
           <div className="flex items-center justify-between">
             <p className="text-md font-medium">{t("serverDetailChart.process")}</p>
@@ -528,11 +528,11 @@ function MemChart({ now, data, messageHistory }: { now: number; data: NezhaServe
 
   return (
     <Card
-      className={cn({
+      className={cn("flex flex-col", {
         "bg-card/70": customBackgroundImage,
       })}
     >
-      <CardContent className="px-6 py-3">
+      <CardContent className="px-6 py-3 mt-auto">
         <section className="flex flex-col gap-1">
           <div className="flex items-center justify-between">
             <section className="flex items-center gap-4">
@@ -671,11 +671,11 @@ function DiskChart({ now, data, messageHistory }: { now: number; data: NezhaServ
 
   return (
     <Card
-      className={cn({
+      className={cn("flex flex-col", {
         "bg-card/70": customBackgroundImage,
       })}
     >
-      <CardContent className="px-6 py-3">
+      <CardContent className="px-6 py-3 mt-auto">
         <section className="flex flex-col gap-1">
           <div className="flex items-center justify-between">
             <p className="text-md font-medium">{t("serverDetailChart.disk")}</p>
@@ -796,11 +796,11 @@ function NetworkChart({ now, data, messageHistory }: { now: number; data: NezhaS
 
   return (
     <Card
-      className={cn({
+      className={cn("flex flex-col", {
         "bg-card/70": customBackgroundImage,
       })}
     >
-      <CardContent className="px-6 py-3">
+      <CardContent className="px-6 py-3 mt-auto">
         <section className="flex flex-col gap-1">
           <div className="flex items-center">
             <section className="flex items-center gap-4">
@@ -944,11 +944,11 @@ function ConnectChart({ now, data, messageHistory }: { now: number; data: NezhaS
 
   return (
     <Card
-      className={cn({
+      className={cn("flex flex-col", {
         "bg-card/70": customBackgroundImage,
       })}
     >
-      <CardContent className="px-6 py-3">
+      <CardContent className="px-6 py-3 mt-auto">
         <section className="flex flex-col gap-1">
           <div className="flex items-center">
             <section className="flex items-center gap-4">
