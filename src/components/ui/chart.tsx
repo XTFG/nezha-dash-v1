@@ -167,7 +167,7 @@ const ChartTooltipContent = React.forwardRef<
               <div
                 key={item.dataKey}
                 className={cn(
-                  "flex w-full flex-wrap items-stretch gap-1 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-muted-foreground",
+                  "flex w-full flex-wrap items-stretch gap-0.5 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-muted-foreground",
                   indicator === "dot" && "items-center",
                 )}
               >
@@ -196,10 +196,14 @@ const ChartTooltipContent = React.forwardRef<
                       )
                     )}
                     <div className={cn("flex flex-1 justify-between leading-none", nestLabel ? "items-end" : "items-center")}>
-                      <div className="grid gap-1.5">
-                        {nestLabel ? tooltipLabel : null}
+                      {nestLabel ? (
+                        <div className="grid gap-1.5">
+                          {tooltipLabel}
+                          <span className="text-muted-foreground">{itemConfig?.label || item.name}</span>
+                        </div>
+                      ) : (
                         <span className="text-muted-foreground">{itemConfig?.label || item.name}</span>
-                      </div>
+                      )}
                       {item.value !== undefined && (
                         <span className="font-mono font-medium tabular-nums text-foreground">
                           {valueFormatter
