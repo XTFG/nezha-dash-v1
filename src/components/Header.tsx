@@ -298,10 +298,10 @@ function Overview() {
       <div className="flex items-center gap-1.5">
         <p className="text-sm font-medium opacity-50">{t("whereTheTimeIs")}</p>
         <NumberFlowGroup>
-          <div style={{ fontVariantNumeric: "tabular-nums" }} className="flex text-sm font-medium mt-0.5">
+          <div style={{ fontVariantNumeric: "tabular-nums" }} className="flex text-sm font-medium">
             <NumberFlow trend={1} value={time.hh} format={{ minimumIntegerDigits: 2 }} />
             <NumberFlow prefix=":" trend={1} value={time.mm} digits={{ 1: { max: 5 } }} format={{ minimumIntegerDigits: 2 }} />
-            <p className="mt-[0.5px]">:{time.ss.toString().padStart(2, "0")}</p>
+            <NumberFlow prefix=":" trend={1} value={time.ss} digits={{ 1: { max: 5 } }} format={{ minimumIntegerDigits: 2 }} />
           </div>
         </NumberFlowGroup>
       </div>
