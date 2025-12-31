@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { useWebSocketContext } from "@/hooks/use-websocket-context"
 import { formatBytes } from "@/lib/format"
-import { cn, formatNezhaInfo, formatRelativeTime } from "@/lib/utils"
+import { cn, formatNezhaInfo, formatRelativeTime, formatTime } from "@/lib/utils"
 import { NezhaServer, NezhaWebsocketResponse } from "@/types/nezha-api"
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -224,7 +224,7 @@ function GpuChart({
               <YAxis tickLine={false} axisLine={false} mirror={true} tickMargin={-15} domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
               <ChartTooltip
                 cursor={false}
-                content={<ChartTooltipContent labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")} />}
+                content={<ChartTooltipContent labelFormatter={(value) => formatTime(Number(value))} />}
               />
               <Area isAnimationActive={false} dataKey="gpu" type="step" fill="hsl(var(--chart-3))" fillOpacity={0.3} stroke="hsl(var(--chart-3))" />
             </AreaChart>
@@ -336,7 +336,7 @@ function CpuChart({ now, data, messageHistory }: { now: number; data: NezhaServe
                 cursor={false}
                 content={
                   <ChartTooltipContent
-                    labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")}
+                    labelFormatter={(value) => formatTime(Number(value))}
                     valueFormatter={(value) => `${Number(value).toFixed(2)}%`}
                   />
                 }
@@ -458,7 +458,7 @@ function ProcessChart({ now, data, messageHistory }: { now: number; data: NezhaS
                 cursor={false}
                 content={
                   <ChartTooltipContent
-                    labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")}
+                    labelFormatter={(value) => formatTime(Number(value))}
                   />
                 }
               />
@@ -604,7 +604,7 @@ function MemChart({ now, data, messageHistory }: { now: number; data: NezhaServe
                 cursor={false}
                 content={
                   <ChartTooltipContent
-                    labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")}
+                    labelFormatter={(value) => formatTime(Number(value))}
                     valueFormatter={(_value, name, _item, _index, payload) => {
                       const data = payload as memChartData
                       const bytes = name === "mem" ? data.mem_used : data.swap_used
@@ -738,7 +738,7 @@ function DiskChart({ now, data, messageHistory }: { now: number; data: NezhaServ
                 cursor={false}
                 content={
                   <ChartTooltipContent
-                    labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")}
+                    labelFormatter={(value) => formatTime(Number(value))}
                     valueFormatter={(_value, _name, _item, _index, payload) =>
                       formatBytes((payload as diskChartData).disk_used, 2)
                     }
@@ -892,7 +892,7 @@ function NetworkChart({ now, data, messageHistory }: { now: number; data: NezhaS
                 cursor={false}
                 content={
                   <ChartTooltipContent
-                    labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")}
+                    labelFormatter={(value) => formatTime(Number(value))}
                     valueFormatter={(value) => {
                       const v = Number(value)
                       return v >= 1024
@@ -1027,7 +1027,7 @@ function ConnectChart({ now, data, messageHistory }: { now: number; data: NezhaS
               <YAxis tickLine={false} axisLine={false} mirror={true} tickMargin={-15} type="number" interval="preserveStartEnd" />
               <ChartTooltip
                 cursor={false}
-                content={<ChartTooltipContent labelFormatter={(value) => new Date(Number(value)).toLocaleTimeString("en-GB")} />}
+                content={<ChartTooltipContent labelFormatter={(value) => formatTime(Number(value))} />}
               />
               <Line isAnimationActive={false} dataKey="tcp" type="linear" stroke="hsl(var(--chart-1))" strokeWidth={1} dot={false} />
               <Line isAnimationActive={false} dataKey="udp" type="linear" stroke="hsl(var(--chart-4))" strokeWidth={1} dot={false} />
