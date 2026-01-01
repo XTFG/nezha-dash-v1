@@ -182,6 +182,7 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
         gpuList.map((gpu, index) => (
           <GpuChart
             key={`${server.id}-gpu-${index}`}
+            now={now}
             index={index}
             id={server.id}
             gpuStat={gpuStats[index]}
@@ -196,6 +197,7 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
         gpuStats.map((gpu, index) => (
           <GpuChart
             key={`${server.id}-gpu-${index}`}
+            now={now}
             index={index}
             id={server.id}
             gpuStat={gpu}
@@ -209,6 +211,7 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
       ) : !isRealtime && hasHistoryGpu ? (
         <GpuChart
           key={`${server.id}-gpu-history`}
+          now={now}
           index={0}
           id={server.id}
           gpuStat={historyRecords[historyRecords.length - 1]?.gpu ?? 0}
@@ -269,6 +272,7 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
 }
 
 function GpuChart({
+  now,
   id,
   index,
   gpuStat,
@@ -278,6 +282,7 @@ function GpuChart({
   historyRecords,
   historyRecordsWithTs,
 }: {
+  now: number
   id: number
   index: number
   gpuStat: number
@@ -331,7 +336,7 @@ function GpuChart({
   useEffect(() => {
     if (!isRealtime) return
     if (Number.isFinite(gpuStat) && historyLoaded) {
-      const timestamp = Date.now().toString()
+      const timestamp = now.toString()
       setGpuChartData((prevData) => {
         let newData = [] as gpuChartData[]
         if (prevData.length === 0) {
@@ -348,7 +353,7 @@ function GpuChart({
         return newData
       })
     }
-  }, [gpuStat, historyLoaded, isRealtime])
+  }, [gpuStat, historyLoaded, isRealtime, now])
 
   const chartConfig = {
     gpu: {
@@ -462,7 +467,7 @@ function CpuChart({
   useEffect(() => {
     if (!isRealtime) return
     if (historyLoaded) {
-      const timestamp = Date.now().toString()
+      const timestamp = now.toString()
       setCpuChartData((prevData) => {
         let newData = [] as cpuChartData[]
         if (prevData.length === 0) {
@@ -479,7 +484,7 @@ function CpuChart({
         return newData
       })
     }
-  }, [cpu, historyLoaded, isRealtime])
+  }, [cpu, historyLoaded, isRealtime, now])
 
   const historyCpuData = useMemo(() => {
     if (historyRecordsWithTs.length === 0) return [] as cpuChartData[]
@@ -605,7 +610,7 @@ function ProcessChart({
   useEffect(() => {
     if (!isRealtime) return
     if (historyLoaded) {
-      const timestamp = Date.now().toString()
+      const timestamp = now.toString()
       setProcessChartData((prevData) => {
         let newData = [] as processChartData[]
         if (prevData.length === 0) {
@@ -622,7 +627,7 @@ function ProcessChart({
         return newData
       })
     }
-  }, [historyLoaded, isRealtime, process])
+  }, [historyLoaded, isRealtime, now, process])
 
   const historyProcessData = useMemo(() => {
     if (historyRecordsWithTs.length === 0) return [] as processChartData[]
@@ -763,7 +768,7 @@ function MemChart({
   useEffect(() => {
     if (!isRealtime) return
     if (historyLoaded) {
-      const timestamp = Date.now().toString()
+      const timestamp = now.toString()
       setMemChartData((prevData) => {
         let newData = [] as memChartData[]
         if (prevData.length === 0) {
@@ -780,7 +785,7 @@ function MemChart({
         return newData
       })
     }
-  }, [historyLoaded, isRealtime, mem, memUsed, swap, swapUsed])
+  }, [historyLoaded, isRealtime, mem, memUsed, now, swap, swapUsed])
 
   const historyMemData = useMemo(() => {
     if (historyRecordsWithTs.length === 0) return [] as memChartData[]
@@ -967,7 +972,7 @@ function DiskChart({
   useEffect(() => {
     if (!isRealtime) return
     if (historyLoaded) {
-      const timestamp = Date.now().toString()
+      const timestamp = now.toString()
       setDiskChartData((prevData) => {
         let newData = [] as diskChartData[]
         if (prevData.length === 0) {
@@ -984,7 +989,7 @@ function DiskChart({
         return newData
       })
     }
-  }, [disk, diskUsed, historyLoaded, isRealtime])
+  }, [disk, diskUsed, historyLoaded, isRealtime, now])
 
   const historyDiskData = useMemo(() => {
     if (historyRecordsWithTs.length === 0) return [] as diskChartData[]
@@ -1126,7 +1131,7 @@ function NetworkChart({
   useEffect(() => {
     if (!isRealtime) return
     if (historyLoaded) {
-      const timestamp = Date.now().toString()
+      const timestamp = now.toString()
       setNetworkChartData((prevData) => {
         let newData = [] as networkChartData[]
         if (prevData.length === 0) {
@@ -1143,7 +1148,7 @@ function NetworkChart({
         return newData
       })
     }
-  }, [down, historyLoaded, isRealtime, up])
+  }, [down, historyLoaded, isRealtime, now, up])
 
   const historyNetworkData = useMemo(() => {
     if (historyRecordsWithTs.length === 0) return [] as networkChartData[]
@@ -1324,7 +1329,7 @@ function ConnectChart({
   useEffect(() => {
     if (!isRealtime) return
     if (historyLoaded) {
-      const timestamp = Date.now().toString()
+      const timestamp = now.toString()
       setConnectChartData((prevData) => {
         let newData = [] as connectChartData[]
         if (prevData.length === 0) {
@@ -1341,7 +1346,7 @@ function ConnectChart({
         return newData
       })
     }
-  }, [historyLoaded, isRealtime, tcp, udp])
+  }, [historyLoaded, isRealtime, now, tcp, udp])
 
   const historyConnectData = useMemo(() => {
     if (historyRecordsWithTs.length === 0) return [] as connectChartData[]
