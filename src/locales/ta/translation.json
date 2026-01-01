@@ -67,7 +67,13 @@
     "download": "பதிவிறக்கம்",
     "process": "செயல்முறை",
     "disk": "வட்டு",
-    "mem": "மெம்"
+    "mem": "மெம்",
+    "noData": "தரவு இல்லை"
+  },
+  "range": {
+    "realtime": "நேரலை",
+    "hours": "{{count}} மணி",
+    "days": "{{count}} நாள்"
   },
   "footer": {
     "themeBy": "மூலம் கருப்பொருள் "
@@ -84,7 +90,8 @@
   },
   "error": {
     "pageNotFound": "பக்கம் கிடைக்கவில்லை",
-    "backToHome": "வீட்டிற்கு திரும்பவும்"
+    "backToHome": "வீட்டிற்கு திரும்பவும்",
+    "fetchFailed": "தரவை ஏற்ற முடியவில்லை"
   },
   "tabSwitch": {
     "Detail": "விவரம்",

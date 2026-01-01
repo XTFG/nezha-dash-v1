@@ -77,7 +77,13 @@
     "mem": "内存",
     "swap": "虚拟内存",
     "upload": "上传",
-    "download": "下载"
+    "download": "下载",
+    "noData": "暂无数据"
+  },
+  "range": {
+    "realtime": "实时",
+    "hours": "{{count}}小时",
+    "days": "{{count}}天"
   },
   "footer": {
     "themeBy": "主题-"
@@ -99,7 +105,8 @@
   },
   "error": {
     "pageNotFound": "页面不存在",
-    "backToHome": "回到主页"
+    "backToHome": "回到主页",
+    "fetchFailed": "数据加载失败"
   },
   "tabSwitch": {
     "Detail": "详情",

@@ -33,7 +33,13 @@
     "mem": "Memoria",
     "swap": "Swap",
     "upload": "Subida",
-    "download": "Bajada"
+    "download": "Bajada",
+    "noData": "Sin datos"
+  },
+  "range": {
+    "realtime": "Tiempo real",
+    "hours": "{{count}} h",
+    "days": "{{count}} d"
   },
   "language": {
     "en-US": "Inglés",
@@ -97,7 +103,8 @@
   },
   "error": {
     "pageNotFound": "Página no encontrada",
-    "backToHome": "Volver al Inicio"
+    "backToHome": "Volver al Inicio",
+    "fetchFailed": "No se pudieron cargar los datos"
   },
   "theme": {
     "system": "Sistema",

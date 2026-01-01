@@ -10,7 +10,13 @@
     "swap": "Swap",
     "upload": "Загрузка",
     "mem": "Mem",
-    "process": "Процесс"
+    "process": "Процесс",
+    "noData": "Нет данных"
+  },
+  "range": {
+    "realtime": "В реальном времени",
+    "hours": "{{count}} ч",
+    "days": "{{count}} д"
   },
   "serverCard": {
     "system": "Система",
@@ -124,7 +130,8 @@
   "offline": "Оффлайн",
   "error": {
     "pageNotFound": "Страница не найдена",
-    "backToHome": "Вернуться на главную"
+    "backToHome": "Вернуться на главную",
+    "fetchFailed": "Не удалось загрузить данные"
   },
   "ToggleDarkMode": "Переключить на темную тему",
   "Shortcuts": "Горячие клавиши",

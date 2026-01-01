@@ -77,21 +77,30 @@ const calculatePacketLoss = (delays: number[]): number[] => {
   return packetLossRates.map((rate) => Number(rate.toFixed(2)))
 }
 
-export function NetworkChart({ server_id, show }: { server_id: number; show: boolean }) {
+export function NetworkChart({ server_id, show, rangeHours }: { server_id: number; show: boolean; rangeHours: number }) {
   const { t } = useTranslation()
+  const isRealtime = rangeHours <= 1
 
-  const { data: monitorData } = useQuery({
-    queryKey: ["monitor", server_id],
-    queryFn: () => fetchMonitor(server_id),
+  const { data: monitorData, isError: monitorError } = useQuery({
+    queryKey: ["monitor", server_id, rangeHours],
+    queryFn: () => fetchMonitor(server_id, rangeHours),
     enabled: show,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
-    refetchInterval: 10000,
+    refetchInterval: isRealtime ? 10000 : false,
   })
+
+  if (monitorError) {
+    return (
+      <div className="flex flex-col items-center justify-center">
+        <p className="text-sm font-medium opacity-40 mb-4">{t("error.fetchFailed")}</p>
+      </div>
+    )
+  }
 
   if (!monitorData) return <NetworkChartLoading />
 
-  if (monitorData?.success && !monitorData.data) {
+  if (monitorData?.success && (!monitorData.data || monitorData.data.length === 0)) {
     return (
       <>
         <div className="flex flex-col items-center justify-center">

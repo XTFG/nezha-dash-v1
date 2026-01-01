@@ -77,7 +77,13 @@
     "mem": "Mem",
     "swap": "Swap",
     "upload": "Upload",
-    "download": "Download"
+    "download": "Download",
+    "noData": "No data"
+  },
+  "range": {
+    "realtime": "Realtime",
+    "hours": "{{count}}h",
+    "days": "{{count}}d"
   },
   "footer": {
     "themeBy": "Theme by "
@@ -98,7 +104,8 @@
   },
   "error": {
     "pageNotFound": "Page not found",
-    "backToHome": "Back to home"
+    "backToHome": "Back to home",
+    "fetchFailed": "Failed to load data"
   },
   "tabSwitch": {
     "Detail": "Detail",

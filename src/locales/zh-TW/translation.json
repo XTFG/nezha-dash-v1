@@ -77,7 +77,13 @@
     "mem": "內存",
     "swap": "虛擬記憶體",
     "upload": "上傳",
-    "download": "下載"
+    "download": "下載",
+    "noData": "暫無資料"
+  },
+  "range": {
+    "realtime": "即時",
+    "hours": "{{count}}小時",
+    "days": "{{count}}天"
   },
   "footer": {
     "themeBy": "主題-"
@@ -98,7 +104,8 @@
   },
   "error": {
     "pageNotFound": "頁面不存在",
-    "backToHome": "回到主頁"
+    "backToHome": "回到主頁",
+    "fetchFailed": "資料載入失敗"
   },
   "tabSwitch": {
     "detail": "詳細資訊",

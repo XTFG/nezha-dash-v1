@@ -72,7 +72,8 @@
   },
   "error": {
     "pageNotFound": "Seite nicht gefunden",
-    "backToHome": "Zurück zur Startseite"
+    "backToHome": "Zurück zur Startseite",
+    "fetchFailed": "Daten konnten nicht geladen werden"
   },
   "whereTheTimeIs": "Wo die Zeit ist",
   "info": {
@@ -93,7 +94,13 @@
     "process": "Prozess",
     "disk": "Festplatte",
     "mem": "Speicher",
-    "swap": "Swap"
+    "swap": "Swap",
+    "noData": "Keine Daten"
+  },
+  "range": {
+    "realtime": "Echtzeit",
+    "hours": "{{count}} Std.",
+    "days": "{{count}} Tage"
   },
   "language": {
     "zh-TW": "Traditionelles Chinesisch",
