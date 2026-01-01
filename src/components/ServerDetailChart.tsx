@@ -162,6 +162,7 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
 
   const server = wsServer ?? buildHistoryServer(Number(server_id), historyRecords)
   const now = nezhaWsData?.now ?? Date.now()
+  const { online } = formatNezhaInfo(now, server)
 
   const gpuStats = server.state.gpu || []
   const gpuList = server.host.gpu || []
@@ -172,6 +173,7 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
       <CpuChart
         key={`cpu-${server.id}`}
         now={now}
+        online={online}
         data={server}
         messageHistory={messageHistory}
         isRealtime={isRealtime}
@@ -183,6 +185,7 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
           <GpuChart
             key={`${server.id}-gpu-${index}`}
             now={now}
+            online={online}
             index={index}
             id={server.id}
             gpuStat={gpuStats[index]}
@@ -198,6 +201,7 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
           <GpuChart
             key={`${server.id}-gpu-${index}`}
             now={now}
+            online={online}
             index={index}
             id={server.id}
             gpuStat={gpu}
@@ -212,6 +216,7 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
         <GpuChart
           key={`${server.id}-gpu-history`}
           now={now}
+          online={online}
           index={0}
           id={server.id}
           gpuStat={historyRecords[historyRecords.length - 1]?.gpu ?? 0}
@@ -225,6 +230,7 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
       <ProcessChart
         key={`process-${server.id}`}
         now={now}
+        online={online}
         data={server}
         messageHistory={messageHistory}
         isRealtime={isRealtime}
@@ -234,6 +240,7 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
       <DiskChart
         key={`disk-${server.id}`}
         now={now}
+        online={online}
         data={server}
         messageHistory={messageHistory}
         isRealtime={isRealtime}
@@ -243,6 +250,7 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
       <MemChart
         key={`mem-${server.id}`}
         now={now}
+        online={online}
         data={server}
         messageHistory={messageHistory}
         isRealtime={isRealtime}
@@ -252,6 +260,7 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
       <NetworkChart
         key={`network-${server.id}`}
         now={now}
+        online={online}
         data={server}
         messageHistory={messageHistory}
         isRealtime={isRealtime}
@@ -261,6 +270,7 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
       <ConnectChart
         key={`connect-${server.id}`}
         now={now}
+        online={online}
         data={server}
         messageHistory={messageHistory}
         isRealtime={isRealtime}
@@ -273,6 +283,7 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
 
 function GpuChart({
   now,
+  online,
   id,
   index,
   gpuStat,
@@ -283,6 +294,7 @@ function GpuChart({
   historyRecordsWithTs,
 }: {
   now: number
+  online: boolean
   id: number
   index: number
   gpuStat: number
@@ -335,6 +347,7 @@ function GpuChart({
 
   useEffect(() => {
     if (!isRealtime) return
+    if (!online) return
     if (Number.isFinite(gpuStat) && historyLoaded) {
       const timestamp = now.toString()
       setGpuChartData((prevData) => {
@@ -353,7 +366,7 @@ function GpuChart({
         return newData
       })
     }
-  }, [gpuStat, historyLoaded, isRealtime, now])
+  }, [gpuStat, historyLoaded, isRealtime, now, online])
 
   const chartConfig = {
     gpu: {
@@ -415,6 +428,7 @@ function GpuChart({
 
 function CpuChart({
   now,
+  online,
   data,
   messageHistory,
   isRealtime,
@@ -422,6 +436,7 @@ function CpuChart({
   historyRecordsWithTs,
 }: {
   now: number
+  online: boolean
   data: NezhaServer
   messageHistory: { data: string }[]
   isRealtime: boolean
@@ -466,6 +481,7 @@ function CpuChart({
   // 更新实时数据
   useEffect(() => {
     if (!isRealtime) return
+    if (!online) return
     if (historyLoaded) {
       const timestamp = now.toString()
       setCpuChartData((prevData) => {
@@ -484,7 +500,7 @@ function CpuChart({
         return newData
       })
     }
-  }, [cpu, historyLoaded, isRealtime, now])
+  }, [cpu, historyLoaded, isRealtime, now, online])
 
   const historyCpuData = useMemo(() => {
     if (historyRecordsWithTs.length === 0) return [] as cpuChartData[]
@@ -557,6 +573,7 @@ function CpuChart({
 
 function ProcessChart({
   now,
+  online,
   data,
   messageHistory,
   isRealtime,
@@ -564,6 +581,7 @@ function ProcessChart({
   historyRecordsWithTs,
 }: {
   now: number
+  online: boolean
   data: NezhaServer
   messageHistory: { data: string }[]
   isRealtime: boolean
@@ -609,6 +627,7 @@ function ProcessChart({
   // 修改实时数据更新逻辑
   useEffect(() => {
     if (!isRealtime) return
+    if (!online) return
     if (historyLoaded) {
       const timestamp = now.toString()
       setProcessChartData((prevData) => {
@@ -627,7 +646,7 @@ function ProcessChart({
         return newData
       })
     }
-  }, [historyLoaded, isRealtime, now, process])
+  }, [historyLoaded, isRealtime, now, online, process])
 
   const historyProcessData = useMemo(() => {
     if (historyRecordsWithTs.length === 0) return [] as processChartData[]
@@ -704,6 +723,7 @@ function ProcessChart({
 
 function MemChart({
   now,
+  online,
   data,
   messageHistory,
   isRealtime,
@@ -711,6 +731,7 @@ function MemChart({
   historyRecordsWithTs,
 }: {
   now: number
+  online: boolean
   data: NezhaServer
   messageHistory: { data: string }[]
   isRealtime: boolean
@@ -767,6 +788,7 @@ function MemChart({
   // 修改实时数据更新逻辑
   useEffect(() => {
     if (!isRealtime) return
+    if (!online) return
     if (historyLoaded) {
       const timestamp = now.toString()
       setMemChartData((prevData) => {
@@ -785,7 +807,7 @@ function MemChart({
         return newData
       })
     }
-  }, [historyLoaded, isRealtime, mem, memUsed, now, swap, swapUsed])
+  }, [historyLoaded, isRealtime, mem, memUsed, now, online, swap, swapUsed])
 
   const historyMemData = useMemo(() => {
     if (historyRecordsWithTs.length === 0) return [] as memChartData[]
@@ -915,6 +937,7 @@ function MemChart({
 
 function DiskChart({
   now,
+  online,
   data,
   messageHistory,
   isRealtime,
@@ -922,6 +945,7 @@ function DiskChart({
   historyRecordsWithTs,
 }: {
   now: number
+  online: boolean
   data: NezhaServer
   messageHistory: { data: string }[]
   isRealtime: boolean
@@ -971,6 +995,7 @@ function DiskChart({
   // 修改实时数据更新逻辑
   useEffect(() => {
     if (!isRealtime) return
+    if (!online) return
     if (historyLoaded) {
       const timestamp = now.toString()
       setDiskChartData((prevData) => {
@@ -989,7 +1014,7 @@ function DiskChart({
         return newData
       })
     }
-  }, [disk, diskUsed, historyLoaded, isRealtime, now])
+  }, [disk, diskUsed, historyLoaded, isRealtime, now, online])
 
   const historyDiskData = useMemo(() => {
     if (historyRecordsWithTs.length === 0) return [] as diskChartData[]
@@ -1075,6 +1100,7 @@ function DiskChart({
 
 function NetworkChart({
   now,
+  online,
   data,
   messageHistory,
   isRealtime,
@@ -1082,6 +1108,7 @@ function NetworkChart({
   historyRecordsWithTs,
 }: {
   now: number
+  online: boolean
   data: NezhaServer
   messageHistory: { data: string }[]
   isRealtime: boolean
@@ -1130,6 +1157,7 @@ function NetworkChart({
   // 修改实时数据更新逻辑
   useEffect(() => {
     if (!isRealtime) return
+    if (!online) return
     if (historyLoaded) {
       const timestamp = now.toString()
       setNetworkChartData((prevData) => {
@@ -1148,7 +1176,7 @@ function NetworkChart({
         return newData
       })
     }
-  }, [down, historyLoaded, isRealtime, now, up])
+  }, [down, historyLoaded, isRealtime, now, online, up])
 
   const historyNetworkData = useMemo(() => {
     if (historyRecordsWithTs.length === 0) return [] as networkChartData[]
@@ -1274,6 +1302,7 @@ function NetworkChart({
 
 function ConnectChart({
   now,
+  online,
   data,
   messageHistory,
   isRealtime,
@@ -1281,6 +1310,7 @@ function ConnectChart({
   historyRecordsWithTs,
 }: {
   now: number
+  online: boolean
   data: NezhaServer
   messageHistory: { data: string }[]
   isRealtime: boolean
@@ -1328,6 +1358,7 @@ function ConnectChart({
   // 修改实时数据更新逻辑
   useEffect(() => {
     if (!isRealtime) return
+    if (!online) return
     if (historyLoaded) {
       const timestamp = now.toString()
       setConnectChartData((prevData) => {
@@ -1346,7 +1377,7 @@ function ConnectChart({
         return newData
       })
     }
-  }, [historyLoaded, isRealtime, now, tcp, udp])
+  }, [historyLoaded, isRealtime, now, online, tcp, udp])
 
   const historyConnectData = useMemo(() => {
     if (historyRecordsWithTs.length === 0) return [] as connectChartData[]
