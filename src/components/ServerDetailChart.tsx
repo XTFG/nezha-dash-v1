@@ -59,6 +59,57 @@ type HistoryRecordWithTs = {
   ts: number
 }
 
+// 检测数据间隔并插入null值，使图表在停机期间断开
+// 根据时间范围动态计算阈值：数据点间隔超过预期间隔的3倍则认为是断点
+function insertNullForGaps<T extends { timeStamp: string }>(
+  data: T[],
+  createNullRecord: (ts: string) => T,
+): T[] {
+  if (data.length < 2) return data
+
+  // 计算数据点的时间间隔（过滤掉0值，因为可能有同一时间的重复记录）
+  const timestamps = data.map((d) => Number(d.timeStamp))
+  const intervals: number[] = []
+  for (let i = 1; i < timestamps.length; i++) {
+    const interval = timestamps[i] - timestamps[i - 1]
+    if (interval > 0) {
+      intervals.push(interval)
+    }
+  }
+
+  // 如果没有有效间隔（全是重复时间戳），直接返回
+  if (intervals.length === 0) return data
+
+  // 使用非零间隔的中位数作为正常间隔的参考
+  const sortedIntervals = [...intervals].sort((a, b) => a - b)
+  const medianInterval = sortedIntervals[Math.floor(sortedIntervals.length / 2)]
+
+  // 间隔超过正常间隔3倍则认为是断点
+  const gapThreshold = medianInterval * 3
+
+  const result: T[] = []
+  for (let i = 0; i < data.length; i++) {
+    if (i > 0) {
+      const currentTs = Number(data[i].timeStamp)
+      const prevTs = Number(data[i - 1].timeStamp)
+      const gap = currentTs - prevTs
+
+      // 如果间隔过大，插入null记录来断开图表
+      if (gap > gapThreshold) {
+        // 根据间隔大小插入相应数量的null点，使空白区域长度正确反映停机时长
+        const nullCount = Math.floor(gap / medianInterval) - 1
+        for (let j = 1; j <= nullCount; j++) {
+          const nullTs = prevTs + medianInterval * j
+          result.push(createNullRecord(nullTs.toString()))
+        }
+      }
+    }
+    result.push(data[i])
+  }
+
+  return result
+}
+
 const getLastRecord = (historyRecords: NezhaLoadRecord[]) => {
   return historyRecords.length > 0 ? historyRecords[historyRecords.length - 1] : undefined
 }
@@ -312,10 +363,12 @@ function GpuChart({
 
   const historyGpuData = useMemo(() => {
     if (historyRecordsWithTs.length === 0) return [] as gpuChartData[]
-    return historyRecordsWithTs.map(({ record, ts }) => ({
+    const data = historyRecordsWithTs.map(({ record, ts }) => ({
       timeStamp: ts.toString(),
       gpu: Number(record.gpu ?? 0),
     }))
+    // 插入null值使图表在停机期间断开
+    return insertNullForGaps(data, (ts) => ({ timeStamp: ts, gpu: null as unknown as number }))
   }, [historyRecordsWithTs])
 
   const lastRecord = getLastRecord(historyRecords)
@@ -504,10 +557,12 @@ function CpuChart({
 
   const historyCpuData = useMemo(() => {
     if (historyRecordsWithTs.length === 0) return [] as cpuChartData[]
-    return historyRecordsWithTs.map(({ record, ts }) => ({
+    const data = historyRecordsWithTs.map(({ record, ts }) => ({
       timeStamp: ts.toString(),
       cpu: Number(record.cpu ?? 0),
     }))
+    // 插入null值使图表在停机期间断开
+    return insertNullForGaps(data, (ts) => ({ timeStamp: ts, cpu: null as unknown as number }))
   }, [historyRecordsWithTs])
 
   const chartConfig = {
@@ -650,10 +705,12 @@ function ProcessChart({
 
   const historyProcessData = useMemo(() => {
     if (historyRecordsWithTs.length === 0) return [] as processChartData[]
-    return historyRecordsWithTs.map(({ record, ts }) => ({
+    const data = historyRecordsWithTs.map(({ record, ts }) => ({
       timeStamp: ts.toString(),
       process: Number(record.process ?? 0),
     }))
+    // 插入null值使图表在停机期间断开
+    return insertNullForGaps(data, (ts) => ({ timeStamp: ts, process: null as unknown as number }))
   }, [historyRecordsWithTs])
 
   const chartConfig = {
@@ -811,7 +868,7 @@ function MemChart({
 
   const historyMemData = useMemo(() => {
     if (historyRecordsWithTs.length === 0) return [] as memChartData[]
-    return historyRecordsWithTs.map(({ record, ts }) => {
+    const data = historyRecordsWithTs.map(({ record, ts }) => {
       const memTotal = Number(record.ram_total ?? 0)
       const memUsed = Number(record.ram ?? 0)
       const swapTotal = Number(record.swap_total ?? 0)
@@ -824,6 +881,14 @@ function MemChart({
         swap_used: swapUsed,
       }
     })
+    // 插入null值使图表在停机期间断开
+    return insertNullForGaps(data, (ts) => ({
+      timeStamp: ts,
+      mem: null as unknown as number,
+      swap: null as unknown as number,
+      mem_used: null as unknown as number,
+      swap_used: null as unknown as number,
+    }))
   }, [historyRecordsWithTs])
 
   const chartConfig = {
@@ -1018,7 +1083,7 @@ function DiskChart({
 
   const historyDiskData = useMemo(() => {
     if (historyRecordsWithTs.length === 0) return [] as diskChartData[]
-    return historyRecordsWithTs.map(({ record, ts }) => {
+    const data = historyRecordsWithTs.map(({ record, ts }) => {
       const diskTotal = Number(record.disk_total ?? 0)
       const diskUsed = Number(record.disk ?? 0)
       return {
@@ -1027,6 +1092,12 @@ function DiskChart({
         disk_used: diskUsed,
       }
     })
+    // 插入null值使图表在停机期间断开
+    return insertNullForGaps(data, (ts) => ({
+      timeStamp: ts,
+      disk: null as unknown as number,
+      disk_used: null as unknown as number,
+    }))
   }, [historyRecordsWithTs])
 
   const chartConfig = {
@@ -1180,15 +1251,22 @@ function NetworkChart({
 
   const historyNetworkData = useMemo(() => {
     if (historyRecordsWithTs.length === 0) return [] as networkChartData[]
-    return historyRecordsWithTs.map(({ record, ts }) => ({
+    const data = historyRecordsWithTs.map(({ record, ts }) => ({
       timeStamp: ts.toString(),
       upload: Number(record.net_out ?? 0) / 1024 / 1024,
       download: Number(record.net_in ?? 0) / 1024 / 1024,
     }))
+    // 插入null值使图表在停机期间断开
+    return insertNullForGaps(data, (ts) => ({
+      timeStamp: ts,
+      upload: null as unknown as number,
+      download: null as unknown as number,
+    }))
   }, [historyRecordsWithTs])
 
   const renderData = isRealtime ? networkChartData : historyNetworkData
-  let maxDownload = Math.max(...renderData.map((item) => item.download))
+  // 过滤掉null值计算最大下载速度
+  let maxDownload = Math.max(...renderData.map((item) => item.download).filter((v) => v !== null && Number.isFinite(v)))
   maxDownload = Math.ceil(maxDownload)
   if (maxDownload < 1) {
     maxDownload = 1
@@ -1381,10 +1459,16 @@ function ConnectChart({
 
   const historyConnectData = useMemo(() => {
     if (historyRecordsWithTs.length === 0) return [] as connectChartData[]
-    return historyRecordsWithTs.map(({ record, ts }) => ({
+    const data = historyRecordsWithTs.map(({ record, ts }) => ({
       timeStamp: ts.toString(),
       tcp: Number(record.connections ?? 0),
       udp: Number(record.connections_udp ?? 0),
+    }))
+    // 插入null值使图表在停机期间断开
+    return insertNullForGaps(data, (ts) => ({
+      timeStamp: ts,
+      tcp: null as unknown as number,
+      udp: null as unknown as number,
     }))
   }, [historyRecordsWithTs])
 
