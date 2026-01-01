@@ -106,7 +106,7 @@ const buildHistoryServer = (serverId: number, historyRecords: NezhaLoadRecord[])
       udp_conn_count: Number(lastRecord?.connections_udp ?? 0),
       process_count: Number(lastRecord?.process ?? 0),
       temperatures: [],
-      gpu: typeof gpuValue === "number" ? [gpuValue] : [],
+      gpu: typeof gpuValue === "number" && gpuValue > 0 ? [gpuValue] : [],
     },
   }
 }
@@ -165,7 +165,7 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
 
   const gpuStats = server.state.gpu || []
   const gpuList = server.host.gpu || []
-  const hasHistoryGpu = historyRecords.some((record) => Number.isFinite(record.gpu))
+  const hasHistoryGpu = historyRecords.some((record) => typeof record.gpu === "number" && record.gpu > 0)
 
   return (
     <section className="grid md:grid-cols-2 lg:grid-cols-3 grid-cols-1 gap-3 server-charts">
@@ -178,7 +178,7 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
         historyRecords={historyRecords}
         historyRecordsWithTs={historyRecordsWithTs}
       />
-      {isRealtime && gpuStats.length >= 1 && gpuList.length === gpuStats.length ? (
+      {isRealtime && gpuStats.length >= 1 && gpuStats.some((v) => v > 0) && gpuList.length === gpuStats.length ? (
         gpuList.map((gpu, index) => (
           <GpuChart
             key={`${server.id}-gpu-${index}`}
@@ -192,7 +192,7 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
             historyRecordsWithTs={historyRecordsWithTs}
           />
         ))
-      ) : isRealtime && gpuStats.length > 0 ? (
+      ) : isRealtime && gpuStats.length > 0 && gpuStats.some((v) => v > 0) ? (
         gpuStats.map((gpu, index) => (
           <GpuChart
             key={`${server.id}-gpu-${index}`}
