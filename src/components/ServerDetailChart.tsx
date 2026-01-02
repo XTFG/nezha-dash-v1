@@ -228,7 +228,6 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
         data={server}
         messageHistory={messageHistory}
         isRealtime={isRealtime}
-        historyRecords={historyRecords}
         historyRecordsWithTs={historyRecordsWithTs}
       />
       {isRealtime && gpuStats.length >= 1 && gpuStats.some((v) => v > 0) && gpuList.length === gpuStats.length ? (
@@ -243,7 +242,6 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
             gpuName={gpu}
             messageHistory={messageHistory}
             isRealtime={isRealtime}
-            historyRecords={historyRecords}
             historyRecordsWithTs={historyRecordsWithTs}
           />
         ))
@@ -259,7 +257,6 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
             gpuName={`#${index + 1}`}
             messageHistory={messageHistory}
             isRealtime={isRealtime}
-            historyRecords={historyRecords}
             historyRecordsWithTs={historyRecordsWithTs}
           />
         ))
@@ -274,7 +271,6 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
           gpuName={gpuList[0]}
           messageHistory={messageHistory}
           isRealtime={isRealtime}
-          historyRecords={historyRecords}
           historyRecordsWithTs={historyRecordsWithTs}
         />
       ) : null}
@@ -285,7 +281,6 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
         data={server}
         messageHistory={messageHistory}
         isRealtime={isRealtime}
-        historyRecords={historyRecords}
         historyRecordsWithTs={historyRecordsWithTs}
       />
       <DiskChart
@@ -295,7 +290,6 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
         data={server}
         messageHistory={messageHistory}
         isRealtime={isRealtime}
-        historyRecords={historyRecords}
         historyRecordsWithTs={historyRecordsWithTs}
       />
       <MemChart
@@ -305,7 +299,6 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
         data={server}
         messageHistory={messageHistory}
         isRealtime={isRealtime}
-        historyRecords={historyRecords}
         historyRecordsWithTs={historyRecordsWithTs}
       />
       <NetworkChart
@@ -315,7 +308,6 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
         data={server}
         messageHistory={messageHistory}
         isRealtime={isRealtime}
-        historyRecords={historyRecords}
         historyRecordsWithTs={historyRecordsWithTs}
       />
       <ConnectChart
@@ -325,7 +317,6 @@ export default function ServerDetailChart({ server_id, rangeHours, isRealtime }:
         data={server}
         messageHistory={messageHistory}
         isRealtime={isRealtime}
-        historyRecords={historyRecords}
         historyRecordsWithTs={historyRecordsWithTs}
       />
     </section>
@@ -341,7 +332,6 @@ function GpuChart({
   gpuName,
   messageHistory,
   isRealtime,
-  historyRecords,
   historyRecordsWithTs,
 }: {
   now: number
@@ -352,7 +342,6 @@ function GpuChart({
   gpuName?: string
   messageHistory: { data: string }[]
   isRealtime: boolean
-  historyRecords: NezhaLoadRecord[]
   historyRecordsWithTs: HistoryRecordWithTs[]
 }) {
   const [gpuChartData, setGpuChartData] = useState<gpuChartData[]>([])
@@ -371,8 +360,7 @@ function GpuChart({
     return insertNullForGaps(data, (ts) => ({ timeStamp: ts, gpu: null as unknown as number }))
   }, [historyRecordsWithTs])
 
-  const lastRecord = getLastRecord(historyRecords)
-  const currentGpu = isRealtime ? gpuStat : Number(lastRecord?.gpu ?? 0)
+  const currentGpu = gpuStat
 
   // 初始化历史数据
   useEffect(() => {
@@ -485,7 +473,6 @@ function CpuChart({
   data,
   messageHistory,
   isRealtime,
-  historyRecords,
   historyRecordsWithTs,
 }: {
   now: number
@@ -493,7 +480,6 @@ function CpuChart({
   data: NezhaServer
   messageHistory: { data: string }[]
   isRealtime: boolean
-  historyRecords: NezhaLoadRecord[]
   historyRecordsWithTs: HistoryRecordWithTs[]
 }) {
   const [cpuChartData, setCpuChartData] = useState<cpuChartData[]>([])
@@ -501,9 +487,7 @@ function CpuChart({
   const [historyLoaded, setHistoryLoaded] = useState(false)
 
   const { cpu } = formatNezhaInfo(now, data)
-  const lastRecord = getLastRecord(historyRecords)
-  const historyCpu = Number(lastRecord?.cpu ?? 0)
-  const currentCpu = isRealtime ? cpu : historyCpu
+  const currentCpu = cpu
 
   const customBackgroundImage = (window.CustomBackgroundImage as string) !== "" ? window.CustomBackgroundImage : undefined
 
@@ -632,7 +616,6 @@ function ProcessChart({
   data,
   messageHistory,
   isRealtime,
-  historyRecords,
   historyRecordsWithTs,
 }: {
   now: number
@@ -640,7 +623,6 @@ function ProcessChart({
   data: NezhaServer
   messageHistory: { data: string }[]
   isRealtime: boolean
-  historyRecords: NezhaLoadRecord[]
   historyRecordsWithTs: HistoryRecordWithTs[]
 }) {
   const { t } = useTranslation()
@@ -651,9 +633,7 @@ function ProcessChart({
   const customBackgroundImage = (window.CustomBackgroundImage as string) !== "" ? window.CustomBackgroundImage : undefined
 
   const { process } = formatNezhaInfo(now, data)
-  const lastRecord = getLastRecord(historyRecords)
-  const historyProcess = Number(lastRecord?.process ?? 0)
-  const currentProcess = isRealtime ? process : historyProcess
+  const currentProcess = process
 
   // 初始化历史数据
   useEffect(() => {
@@ -784,7 +764,6 @@ function MemChart({
   data,
   messageHistory,
   isRealtime,
-  historyRecords,
   historyRecordsWithTs,
 }: {
   now: number
@@ -792,7 +771,6 @@ function MemChart({
   data: NezhaServer
   messageHistory: { data: string }[]
   isRealtime: boolean
-  historyRecords: NezhaLoadRecord[]
   historyRecordsWithTs: HistoryRecordWithTs[]
 }) {
   const { t } = useTranslation()
@@ -803,17 +781,10 @@ function MemChart({
   const customBackgroundImage = (window.CustomBackgroundImage as string) !== "" ? window.CustomBackgroundImage : undefined
 
   const { mem, swap } = formatNezhaInfo(now, data)
-  const lastRecord = getLastRecord(historyRecords)
   const memUsed = data.state.mem_used
   const swapUsed = data.state.swap_used
-  const historyMemTotal = Number(lastRecord?.ram_total ?? 0)
-  const historyMemUsed = Number(lastRecord?.ram ?? 0)
-  const historySwapTotal = Number(lastRecord?.swap_total ?? 0)
-  const historySwapUsed = Number(lastRecord?.swap ?? 0)
-  const historyMemPercent = historyMemTotal > 0 ? (historyMemUsed / historyMemTotal) * 100 : 0
-  const historySwapPercent = historySwapTotal > 0 ? (historySwapUsed / historySwapTotal) * 100 : 0
-  const currentMem = isRealtime ? mem : historyMemPercent
-  const currentSwap = isRealtime ? swap : historySwapPercent
+  const currentMem = mem
+  const currentSwap = swap
 
   // 初始化历史数据
   useEffect(() => {
@@ -929,20 +900,13 @@ function MemChart({
             </section>
             <section className="flex flex-col items-end gap-0.5">
               <div className="flex text-[11px] font-medium items-center gap-2">
-                {isRealtime ? formatBytes(data.state.mem_used) : formatBytes(historyMemUsed)} /{" "}
-                {isRealtime ? formatBytes(data.host.mem_total) : formatBytes(historyMemTotal)}
+                {formatBytes(data.state.mem_used)} / {formatBytes(data.host.mem_total)}
               </div>
               <div className="flex text-[11px] font-medium items-center gap-2">
-                {isRealtime ? (
-                  data.host.swap_total ? (
-                    <>
-                      Swap: {formatBytes(data.state.swap_used)}
-                    </>
-                  ) : (
-                    <>no swap</>
-                  )
-                ) : historySwapTotal ? (
-                  <>Swap: {formatBytes(historySwapUsed)}</>
+                {data.host.swap_total ? (
+                  <>
+                    Swap: {formatBytes(data.state.swap_used)}
+                  </>
                 ) : (
                   <>no swap</>
                 )}
@@ -1006,7 +970,6 @@ function DiskChart({
   data,
   messageHistory,
   isRealtime,
-  historyRecords,
   historyRecordsWithTs,
 }: {
   now: number
@@ -1014,7 +977,6 @@ function DiskChart({
   data: NezhaServer
   messageHistory: { data: string }[]
   isRealtime: boolean
-  historyRecords: NezhaLoadRecord[]
   historyRecordsWithTs: HistoryRecordWithTs[]
 }) {
   const { t } = useTranslation()
@@ -1025,12 +987,8 @@ function DiskChart({
   const customBackgroundImage = (window.CustomBackgroundImage as string) !== "" ? window.CustomBackgroundImage : undefined
 
   const { disk } = formatNezhaInfo(now, data)
-  const lastRecord = getLastRecord(historyRecords)
   const diskUsed = data.state.disk_used
-  const historyDiskTotal = Number(lastRecord?.disk_total ?? 0)
-  const historyDiskUsed = Number(lastRecord?.disk ?? 0)
-  const historyDiskPercent = historyDiskTotal > 0 ? (historyDiskUsed / historyDiskTotal) * 100 : 0
-  const currentDisk = isRealtime ? disk : historyDiskPercent
+  const currentDisk = disk
 
   // 初始化历史数据
   useEffect(() => {
@@ -1123,8 +1081,7 @@ function DiskChart({
                 <AnimatedCircularProgressBar className="size-3 text-[0px]" max={100} min={0} value={currentDisk} primaryColor="hsl(var(--chart-5))" />
               </section>
               <div className="flex text-[11px] font-medium items-center gap-2">
-                {isRealtime ? formatBytes(data.state.disk_used) : formatBytes(historyDiskUsed)} /{" "}
-                {isRealtime ? formatBytes(data.host.disk_total) : formatBytes(historyDiskTotal)}
+                {formatBytes(data.state.disk_used)} / {formatBytes(data.host.disk_total)}
               </div>
             </section>
           </div>
@@ -1175,7 +1132,6 @@ function NetworkChart({
   data,
   messageHistory,
   isRealtime,
-  historyRecords,
   historyRecordsWithTs,
 }: {
   now: number
@@ -1183,7 +1139,6 @@ function NetworkChart({
   data: NezhaServer
   messageHistory: { data: string }[]
   isRealtime: boolean
-  historyRecords: NezhaLoadRecord[]
   historyRecordsWithTs: HistoryRecordWithTs[]
 }) {
   const { t } = useTranslation()
@@ -1194,11 +1149,8 @@ function NetworkChart({
   const customBackgroundImage = (window.CustomBackgroundImage as string) !== "" ? window.CustomBackgroundImage : undefined
 
   const { up, down } = formatNezhaInfo(now, data)
-  const lastRecord = getLastRecord(historyRecords)
-  const historyUp = Number(lastRecord?.net_out ?? 0) / 1024 / 1024
-  const historyDown = Number(lastRecord?.net_in ?? 0) / 1024 / 1024
-  const currentUp = isRealtime ? up : historyUp
-  const currentDown = isRealtime ? down : historyDown
+  const currentUp = up
+  const currentDown = down
 
   // 初始化历史数据
   useEffect(() => {
@@ -1384,7 +1336,6 @@ function ConnectChart({
   data,
   messageHistory,
   isRealtime,
-  historyRecords,
   historyRecordsWithTs,
 }: {
   now: number
@@ -1392,7 +1343,6 @@ function ConnectChart({
   data: NezhaServer
   messageHistory: { data: string }[]
   isRealtime: boolean
-  historyRecords: NezhaLoadRecord[]
   historyRecordsWithTs: HistoryRecordWithTs[]
 }) {
   const [connectChartData, setConnectChartData] = useState([] as connectChartData[])
@@ -1402,11 +1352,8 @@ function ConnectChart({
   const customBackgroundImage = (window.CustomBackgroundImage as string) !== "" ? window.CustomBackgroundImage : undefined
 
   const { tcp, udp } = formatNezhaInfo(now, data)
-  const lastRecord = getLastRecord(historyRecords)
-  const historyTcp = Number(lastRecord?.connections ?? 0)
-  const historyUdp = Number(lastRecord?.connections_udp ?? 0)
-  const currentTcp = isRealtime ? tcp : historyTcp
-  const currentUdp = isRealtime ? udp : historyUdp
+  const currentTcp = tcp
+  const currentUdp = udp
 
   // 初始化历史数据
   useEffect(() => {
