@@ -17,13 +17,13 @@ import { Switch } from "./ui/switch"
 
 interface ResultItem {
   created_at: number
-  [key: string]: number
+  [key: string]: number | null
 }
 
 /**
  * Helper method to calculate packet loss from delay data
  */
-const calculatePacketLoss = (delays: number[]): number[] => {
+const calculatePacketLoss = (delays: (number | null)[]): number[] => {
   if (!delays || delays.length === 0) return []
 
   const packetLossRates: number[] = []
@@ -44,7 +44,7 @@ const calculatePacketLoss = (delays: number[]): number[] => {
     } else {
       const start = Math.max(0, i - Math.floor(windowSize / 2))
       const end = Math.min(delays.length, i + Math.ceil(windowSize / 2))
-      const windowDelays = delays.slice(start, end).filter((d) => d > 0)
+      const windowDelays = delays.slice(start, end).filter((d): d is number => d !== null && d > 0)
 
       if (windowDelays.length > 2) {
         const mean = windowDelays.reduce((sum, d) => sum + d, 0) / windowDelays.length
@@ -193,7 +193,7 @@ export const NetworkChartClient = React.memo(function NetworkChart({
     () =>
       chartDataKey.map((key) => {
         const monitorData = chartData[key]
-        const lastDelay = monitorData[monitorData.length - 1].avg_delay
+        const lastValidDelay = [...monitorData].reverse().find((item) => item.avg_delay !== null)?.avg_delay ?? 0
 
         // Calculate average packet loss if available
         const packetLossData = monitorData.filter((item) => item.packet_loss !== undefined).map((item) => item.packet_loss!)
@@ -208,7 +208,7 @@ export const NetworkChartClient = React.memo(function NetworkChart({
           >
             <span className="whitespace-nowrap text-xs text-muted-foreground">{key}</span>
             <div className="flex flex-col gap-0.5">
-              <span className="text-md font-bold leading-none sm:text-lg">{lastDelay.toFixed(2)}ms</span>
+              <span className="text-md font-bold leading-none sm:text-lg">{lastValidDelay.toFixed(2)}ms</span>
               {avgPacketLoss !== null && <span className="text-xs text-muted-foreground">{avgPacketLoss.toFixed(2)}% avg loss</span>}
             </div>
           </button>
@@ -562,11 +562,9 @@ const formatData = (rawData: NezhaMonitor[]) => {
       }
 
       const timeIndex = created_at.indexOf(time)
-      // @ts-expect-error - avg_delay is an array
       result[time][monitor_name] = timeIndex !== -1 ? avg_delay[timeIndex] : null
       // Add packet loss data if available
       if (packetLoss) {
-        // @ts-expect-error - packet_loss is calculated
         result[time][`${monitor_name}_packet_loss`] = timeIndex !== -1 ? packetLoss[timeIndex] : null
       }
     })

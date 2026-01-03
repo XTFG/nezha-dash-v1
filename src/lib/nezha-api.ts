@@ -115,15 +115,15 @@ export const fetchMonitor = async (server_id: number, hours = 24): Promise<Monit
     const ts = Date.parse(rec.time ?? "")
     if (!Number.isFinite(ts)) return
     const val = Number(rec.value)
-    if (!Number.isFinite(val) || val === -1) return
+    if (!Number.isFinite(val)) return
+    // -1 表示丢包，转为 null 供图表跳过、calculatePacketLoss 识别
     s.created_at.push(ts)
-    s.avg_delay.push(val)
+    s.avg_delay.push(val === -1 ? null : val)
   }
 
   if (km_monitors && Array.isArray(km_monitors.tasks) && Array.isArray(km_monitors.records)) {
     for (const task of km_monitors.tasks) {
-      const series = ensureSeries(task.id, task.name)
-      series.packet_loss = [task.loss ?? 0]
+      ensureSeries(task.id, task.name)
     }
 
     for (const rec of km_monitors.records) {
@@ -153,8 +153,7 @@ export const fetchMonitor = async (server_id: number, hours = 24): Promise<Monit
   // 避免空的 avg_delay
   for (const s of data) {
     if (s.avg_delay.length == 0) {
-      s.packet_loss = seriesByTask.get(s.monitor_id)?.packet_loss || [0]
-      s.avg_delay = [-1]
+      s.avg_delay = [null]
       s.created_at = [Date.now()]
     }
   }
