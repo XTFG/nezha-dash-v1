@@ -23,7 +23,7 @@ interface ResultItem {
 /**
  * Helper method to calculate packet loss from delay data
  */
-const calculatePacketLoss = (delays: number[]): number[] => {
+const calculatePacketLoss = (delays: (number | null)[]): number[] => {
   if (!delays || delays.length === 0) return []
 
   const packetLossRates: number[] = []
