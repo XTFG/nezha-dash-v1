@@ -137,8 +137,5 @@
   "Servers": "Servidores",
   "ToggleLightMode": "Activar el modo claro",
   "ToggleDarkMode": "Activar el modo oscuro",
-  "ToggleSystemMode": "Activar modo del sistema",
-  "footer": {
-    "themeBy": "Tema por. "
-  }
+  "ToggleSystemMode": "Activar modo del sistema"
 }

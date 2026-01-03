@@ -116,8 +116,7 @@ export default function ServerDetail() {
         </div>
         <Separator className="flex-1" />
       </section>
-      <section className="flex items-center w-full">
-        <Separator className="flex-1" />
+      <section className="flex items-center justify-center w-full">
         <div className="flex justify-center w-full max-w-[360px]">
           {currentTab === tabs[0] ? (
             <RangeSwitch options={detailOptions} currentValue={detailRange} setCurrentValue={setDetailRange} layoutId="detail-range-switch" />
@@ -125,7 +124,6 @@ export default function ServerDetail() {
             <RangeSwitch options={networkOptions} currentValue={networkRange} setCurrentValue={setNetworkRange} layoutId="network-range-switch" />
           )}
         </div>
-        <Separator className="flex-1" />
       </section>
       <div style={{ display: currentTab === tabs[0] ? "block" : "none" }}>
         <ServerDetailChart server_id={server_id} rangeHours={detailRangeHours} isRealtime={isDetailRealtime} />

@@ -85,9 +85,6 @@
     "hours": "{{count}}小时",
     "days": "{{count}}天"
   },
-  "footer": {
-    "themeBy": "主题-"
-  },
   "language": {
     "zh-CN": "简体中文",
     "zh-TW": "繁體中文",

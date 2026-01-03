@@ -136,9 +136,6 @@
   "ToggleDarkMode": "Переключить на темную тему",
   "Shortcuts": "Горячие клавиши",
   "ToggleSystemMode": "Использовать системную тему",
-  "footer": {
-    "themeBy": "Тема от "
-  },
   "NoResults": "Ничего не найдено.",
   "nezha": "Nezha Monitoring"
 }
