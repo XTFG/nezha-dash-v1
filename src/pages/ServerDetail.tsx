@@ -109,14 +109,14 @@ export default function ServerDetail() {
   return (
     <div className="mx-auto w-full max-w-5xl px-0 flex flex-col gap-4 server-info">
       <ServerDetailOverview server_id={server_id} />
-      <section className="flex items-center my-2 w-full">
+      <section className="flex items-center my-1 w-full">
         <Separator className="flex-1" />
         <div className="flex justify-center w-full max-w-[200px]">
           <TabSwitch tabs={tabs} currentTab={currentTab} setCurrentTab={setCurrentTab} />
         </div>
         <Separator className="flex-1" />
       </section>
-      <section className="flex items-center justify-center w-full">
+      <section className="flex items-center justify-center w-full -mt-3">
         <div className="flex justify-center w-full max-w-[360px]">
           {currentTab === tabs[0] ? (
             <RangeSwitch options={detailOptions} currentValue={detailRange} setCurrentValue={setDetailRange} layoutId="detail-range-switch" />
