@@ -117,7 +117,7 @@ export function NetworkChart({ server_id, show, rangeHours }: { server_id: numbe
   const { rangeStart, rangeEnd } = getTimeRange(monitorData.data, rangeHours, monitorData.from, monitorData.to)
   const timelineData = buildTimelineData(monitorData.data, rangeStart, rangeEnd)
   const transformedData = transformData(monitorData.data)
-  const formattedData = formatData(monitorData.data, timelineData.timeline, timelineData.observedSet)
+  const formattedData = formatData(monitorData.data, timelineData.timeline, timelineData.observedSet, timelineData.intervalMs)
   const chartDataKey = Object.keys(transformedData)
   const hasOffline = timelineData.offlineSpans.length > 0
 
@@ -483,6 +483,7 @@ export const NetworkChartClient = React.memo(function NetworkChart({
                     fillOpacity={0.25}
                     stroke="none"
                     ifOverflow="hidden"
+                    yAxisId="delay"
                   />
                 ))}
               <XAxis
@@ -590,7 +591,7 @@ const transformData = (data: NezhaMonitor[]) => {
   return monitorData
 }
 
-const formatData = (rawData: NezhaMonitor[], timeline: number[], observedSet: Set<number>) => {
+const formatData = (rawData: NezhaMonitor[], timeline: number[], observedSet: Set<number>, intervalMs: number) => {
   const result: { [time: number]: ResultItem } = {}
 
   timeline.forEach((time) => {
@@ -606,13 +607,22 @@ const formatData = (rawData: NezhaMonitor[], timeline: number[], observedSet: Se
 
     const valueMap = new Map<number, number | null>()
     const packetLossMap = new Map<number, number | null>()
+    const sampleTimes = new Set<number>()
+    const validPoints: { time: number; value: number }[] = []
 
     for (let i = 0; i < created_at.length; i++) {
       valueMap.set(created_at[i], avg_delay[i])
+      sampleTimes.add(created_at[i])
       if (packetLoss) {
         packetLossMap.set(created_at[i], packetLoss[i])
       }
+      if (avg_delay[i] !== null && avg_delay[i] !== undefined) {
+        validPoints.push({ time: created_at[i], value: avg_delay[i] })
+      }
     }
+
+    let nextIndex = 0
+    let prevPoint: { time: number; value: number } | null = null
 
     timeline.forEach((time) => {
       if (!result[time]) {
@@ -622,9 +632,43 @@ const formatData = (rawData: NezhaMonitor[], timeline: number[], observedSet: Se
         }
       }
 
-      result[time][monitor_name] = valueMap.has(time) ? valueMap.get(time)! : null
+      const isOffline = result[time][OFFLINE_KEY] !== null
+      if (isOffline) {
+        result[time][monitor_name] = null
+        if (packetLoss) {
+          result[time][`${monitor_name}_packet_loss`] = null
+        }
+        return
+      }
+
+      if (sampleTimes.has(time)) {
+        result[time][monitor_name] = valueMap.get(time) ?? null
+        if (packetLoss) {
+          result[time][`${monitor_name}_packet_loss`] = packetLossMap.get(time) ?? null
+        }
+        return
+      }
+
+      while (nextIndex < validPoints.length && validPoints[nextIndex].time < time) {
+        prevPoint = validPoints[nextIndex]
+        nextIndex += 1
+      }
+
+      const nextPoint = validPoints[nextIndex]
+      if (
+        prevPoint &&
+        nextPoint &&
+        intervalMs > 0 &&
+        nextPoint.time - prevPoint.time <= intervalMs * OFFLINE_GAP_MULTIPLIER
+      ) {
+        const ratio = (time - prevPoint.time) / (nextPoint.time - prevPoint.time)
+        result[time][monitor_name] = prevPoint.value + ratio * (nextPoint.value - prevPoint.value)
+      } else {
+        result[time][monitor_name] = null
+      }
+
       if (packetLoss) {
-        result[time][`${monitor_name}_packet_loss`] = packetLossMap.has(time) ? packetLossMap.get(time)! : null
+        result[time][`${monitor_name}_packet_loss`] = null
       }
     })
   })
@@ -699,66 +743,62 @@ const getTypicalIntervalMs = (data: NezhaMonitor[]) => {
   return Math.max(1000, rounded || median)
 }
 
-const buildExpectedTimes = (rangeStart: number, rangeEnd: number, intervalMs: number, anchor: number) => {
-  if (!Number.isFinite(rangeStart) || !Number.isFinite(rangeEnd) || intervalMs <= 0 || rangeStart >= rangeEnd) {
+const OFFLINE_GAP_MULTIPLIER = 1.5
+
+const buildOfflineSpans = (observedTimes: number[], rangeStart: number, rangeEnd: number, intervalMs: number) => {
+  if (!Number.isFinite(rangeStart) || !Number.isFinite(rangeEnd) || rangeStart >= rangeEnd || intervalMs <= 0) {
     return []
   }
 
-  let start = Number.isFinite(anchor) ? anchor : rangeStart
-  while (start - intervalMs >= rangeStart) {
-    start -= intervalMs
-  }
-
-  const times: number[] = []
-  for (let t = start; t <= rangeEnd; t += intervalMs) {
-    if (t >= rangeStart && t <= rangeEnd) {
-      times.push(t)
-    }
-  }
-
-  if (!times.length) {
-    return [rangeStart, rangeEnd].filter((time, index, arr) => Number.isFinite(time) && arr.indexOf(time) === index)
-  }
-
-  return times
-}
-
-const buildOfflineSpans = (expectedTimes: number[], observedSet: Set<number>, intervalMs: number, rangeEnd: number) => {
-  if (!expectedTimes.length || intervalMs <= 0) {
-    return []
+  if (observedTimes.length === 0) {
+    return [{ start: rangeStart, end: rangeEnd }]
   }
 
   const spans: OfflineSpan[] = []
-  let spanStart: number | null = null
-  let lastMissing: number | null = null
+  const threshold = intervalMs * OFFLINE_GAP_MULTIPLIER
+  const sortedTimes = [...observedTimes].sort((a, b) => a - b)
+  const firstTime = sortedTimes[0]
 
-  expectedTimes.forEach((time) => {
-    if (!observedSet.has(time)) {
-      if (spanStart === null) {
-        spanStart = time
-      }
-      lastMissing = time
-      return
-    }
+  if (firstTime - rangeStart > threshold) {
+    spans.push({ start: rangeStart, end: firstTime })
+  }
 
-    if (spanStart !== null) {
-      const spanEnd = Math.min(rangeEnd, (lastMissing ?? spanStart) + intervalMs)
-      if (spanEnd > spanStart) {
+  for (let i = 1; i < sortedTimes.length; i++) {
+    const prev = sortedTimes[i - 1]
+    const next = sortedTimes[i]
+    if (next - prev > threshold) {
+      const spanStart = prev + intervalMs
+      const spanEnd = Math.min(next, rangeEnd)
+      if (spanStart < spanEnd) {
         spans.push({ start: spanStart, end: spanEnd })
       }
-      spanStart = null
-      lastMissing = null
     }
-  })
+  }
 
-  if (spanStart !== null) {
-    const spanEnd = Math.min(rangeEnd, (lastMissing ?? spanStart) + intervalMs)
-    if (spanEnd > spanStart) {
-      spans.push({ start: spanStart, end: spanEnd })
+  const lastTime = sortedTimes[sortedTimes.length - 1]
+  if (rangeEnd - lastTime > threshold) {
+    const spanStart = lastTime + intervalMs
+    if (spanStart < rangeEnd) {
+      spans.push({ start: spanStart, end: rangeEnd })
     }
   }
 
   return spans
+}
+
+const buildOfflinePoints = (spans: OfflineSpan[], intervalMs: number) => {
+  if (intervalMs <= 0) {
+    return []
+  }
+
+  const points: number[] = []
+  spans.forEach((span) => {
+    for (let t = span.start; t < span.end; t += intervalMs) {
+      points.push(t)
+    }
+  })
+
+  return points
 }
 
 const buildTimelineData = (rawData: NezhaMonitor[], rangeStart: number, rangeEnd: number) => {
@@ -774,16 +814,15 @@ const buildTimelineData = (rawData: NezhaMonitor[], rangeStart: number, rangeEnd
 
   const observedTimes = Array.from(observedSet).sort((a, b) => a - b)
   const intervalMs = getTypicalIntervalMs(rawData)
-  const anchor = observedTimes.length > 0 ? observedTimes[0] : rangeStart
-  const expectedTimes = buildExpectedTimes(rangeStart, rangeEnd, intervalMs, anchor)
+  const offlineSpans = buildOfflineSpans(observedTimes, rangeStart, rangeEnd, intervalMs)
+  const offlinePoints = buildOfflinePoints(offlineSpans, intervalMs)
 
-  const timelineSet = new Set<number>(expectedTimes)
-  observedTimes.forEach((time) => timelineSet.add(time))
+  const timelineSet = new Set<number>(observedTimes)
+  offlinePoints.forEach((time) => timelineSet.add(time))
 
   const timeline = Array.from(timelineSet).sort((a, b) => a - b)
-  const offlineSpans = buildOfflineSpans(expectedTimes, observedSet, intervalMs, rangeEnd)
 
-  return { timeline, offlineSpans, observedSet }
+  return { timeline, offlineSpans, observedSet, intervalMs }
 }
 
 const buildTimeTicks = (rangeStart: number, rangeEnd: number) => {
