@@ -9,7 +9,7 @@ import { useQuery } from "@tanstack/react-query"
 import * as React from "react"
 import { useCallback, useMemo } from "react"
 import { useTranslation } from "react-i18next"
-import { Area, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from "recharts"
+import { Area, CartesianGrid, ComposedChart, Line, ReferenceArea, XAxis, YAxis } from "recharts"
 
 import NetworkChartLoading from "./NetworkChartLoading"
 import { Label } from "./ui/label"
@@ -19,6 +19,8 @@ interface ResultItem {
   created_at: number
   [key: string]: number | null
 }
+
+const OFFLINE_KEY = "__offline__"
 
 /**
  * Helper method to calculate packet loss from delay data
@@ -112,16 +114,24 @@ export function NetworkChart({ server_id, show, rangeHours }: { server_id: numbe
     )
   }
 
+  const { rangeStart, rangeEnd } = getTimeRange(monitorData.data, rangeHours, monitorData.from, monitorData.to)
+  const timelineData = buildTimelineData(monitorData.data, rangeStart, rangeEnd)
   const transformedData = transformData(monitorData.data)
-
-  const formattedData = formatData(monitorData.data)
-
+  const formattedData = formatData(monitorData.data, timelineData.timeline, timelineData.observedSet)
   const chartDataKey = Object.keys(transformedData)
+  const hasOffline = timelineData.offlineSpans.length > 0
 
   const initChartConfig = {
     avg_delay: {
       label: t("monitor.avgDelay"),
     },
+    ...(hasOffline
+      ? {
+          [OFFLINE_KEY]: {
+            label: t("monitor.offline"),
+          },
+        }
+      : {}),
     ...chartDataKey.reduce((acc, key) => {
       acc[key] = {
         label: key,
@@ -137,6 +147,9 @@ export function NetworkChart({ server_id, show, rangeHours }: { server_id: numbe
       chartData={transformedData}
       serverName={monitorData.data[0].server_name}
       formattedData={formattedData}
+      rangeStart={rangeStart}
+      rangeEnd={rangeEnd}
+      offlineSpans={timelineData.offlineSpans}
     />
   )
 }
@@ -147,14 +160,21 @@ export const NetworkChartClient = React.memo(function NetworkChart({
   chartData,
   serverName,
   formattedData,
+  rangeStart,
+  rangeEnd,
+  offlineSpans,
 }: {
   chartDataKey: string[]
   chartConfig: ChartConfig
   chartData: ServerMonitorChart
   serverName: string
   formattedData: ResultItem[]
+  rangeStart: number
+  rangeEnd: number
+  offlineSpans: OfflineSpan[]
 }) {
   const { t } = useTranslation()
+  const hasOffline = offlineSpans.length > 0
 
   const customBackgroundImage = (window.CustomBackgroundImage as string) !== "" ? window.CustomBackgroundImage : undefined
 
@@ -217,6 +237,8 @@ export const NetworkChartClient = React.memo(function NetworkChart({
     [chartDataKey, activeCharts, chartData, handleButtonClick],
   )
 
+  const timeTicks = useMemo(() => buildTimeTicks(rangeStart, rangeEnd), [rangeStart, rangeEnd])
+
   const chartElements = useMemo(() => {
     const elements = []
 
@@ -232,6 +254,7 @@ export const NetworkChartClient = React.memo(function NetworkChart({
           fill="hsl(45, 100%, 60%)"
           fillOpacity={0.3}
           yAxisId="packet-loss"
+          connectNulls={false}
         />,
         <Line
           key="delay-line"
@@ -242,7 +265,7 @@ export const NetworkChartClient = React.memo(function NetworkChart({
           dataKey="avg_delay"
           stroke={getColorByIndex(chart)}
           yAxisId="delay"
-          connectNulls={true}
+          connectNulls={false}
         />,
       )
     } else if (activeCharts.length > 1) {
@@ -258,7 +281,7 @@ export const NetworkChartClient = React.memo(function NetworkChart({
             dataKey={chart}
             stroke={getColorByIndex(chart)}
             name={chart}
-            connectNulls={true}
+            connectNulls={false}
             yAxisId="delay"
           />
         )),
@@ -275,25 +298,44 @@ export const NetworkChartClient = React.memo(function NetworkChart({
             dot={false}
             dataKey={key}
             stroke={getColorByIndex(key)}
-            connectNulls={true}
+            connectNulls={false}
             yAxisId="delay"
           />
         )),
       )
     }
 
+    if (hasOffline) {
+      elements.push(
+        <Line
+          key={OFFLINE_KEY}
+          isAnimationActive={false}
+          strokeWidth={1}
+          type="linear"
+          dot={false}
+          dataKey={OFFLINE_KEY}
+          stroke="hsl(var(--muted-foreground))"
+          strokeOpacity={0}
+          legendType="rect"
+          yAxisId="offline"
+          connectNulls={false}
+        />,
+      )
+    }
+
     return elements
-  }, [activeCharts, chartDataKey, getColorByIndex])
+  }, [activeCharts, chartDataKey, getColorByIndex, hasOffline])
 
   const processedData = useMemo(() => {
     // Special handling for single chart selection
     let baseData = formattedData
     if (activeCharts.length === 1) {
       const selectedChart = activeCharts[0]
-      baseData = chartData[selectedChart].map((item) => ({
+      baseData = formattedData.map((item) => ({
         created_at: item.created_at,
-        avg_delay: item.avg_delay,
-        packet_loss: item.packet_loss ?? 0,
+        avg_delay: item[selectedChart] ?? null,
+        packet_loss: item[`${selectedChart}_packet_loss`] ?? null,
+        [OFFLINE_KEY]: item[OFFLINE_KEY] ?? null,
       }))
     }
 
@@ -389,7 +431,7 @@ export const NetworkChartClient = React.memo(function NetworkChart({
 
       return smoothed
     })
-  }, [isPeakEnabled, activeCharts, formattedData, chartData, chartDataKey])
+  }, [isPeakEnabled, activeCharts, formattedData, chartDataKey])
 
   return (
     <Card
@@ -424,41 +466,40 @@ export const NetworkChartClient = React.memo(function NetworkChart({
           )}
           <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
             <ComposedChart accessibilityLayer data={processedData} margin={{ left: 12, right: 12 }}>
+              <defs>
+                <pattern id="offlinePattern" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                  <rect width="6" height="6" fill="rgba(120, 120, 120, 0.12)" />
+                  <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(120, 120, 120, 0.45)" strokeWidth="1" />
+                </pattern>
+              </defs>
               <CartesianGrid vertical={false} />
+              {hasOffline &&
+                offlineSpans.map((span, index) => (
+                  <ReferenceArea
+                    key={`offline-${index}`}
+                    x1={span.start}
+                    x2={span.end}
+                    fill="url(#offlinePattern)"
+                    fillOpacity={0.25}
+                    stroke="none"
+                    ifOverflow="hidden"
+                  />
+                ))}
               <XAxis
                 dataKey="created_at"
+                type="number"
+                scale="time"
+                domain={[rangeStart, rangeEnd]}
                 tickLine={true}
                 tickSize={3}
                 axisLine={false}
                 tickMargin={8}
                 minTickGap={80}
-                ticks={processedData
-                  .filter((item, index, array) => {
-                    if (array.length < 6) {
-                      return index === 0 || index === array.length - 1
-                    }
-
-                    // 计算数据的总时间跨度（毫秒）
-                    const timeSpan = array[array.length - 1].created_at - array[0].created_at
-                    const hours = timeSpan / (1000 * 60 * 60)
-
-                    // 根据时间跨度调整显示间隔
-                    if (hours <= 12) {
-                      // 12小时内，每60分钟显示一个刻度
-                      return index === 0 || index === array.length - 1 || new Date(item.created_at).getMinutes() % 60 === 0
-                    }
-                    // 超过12小时，每2小时显示一个刻度
-                    const date = new Date(item.created_at)
-                    return date.getMinutes() === 0 && date.getHours() % 2 === 0
-                  })
-                  .map((item) => item.created_at)}
-                tickFormatter={(value) => {
-                  const date = new Date(value)
-                  const minutes = date.getMinutes()
-                  return minutes === 0 ? `${date.getHours()}:00` : `${date.getHours()}:${minutes}`
-                }}
+                ticks={timeTicks}
+                tickFormatter={formatTimeTick}
               />
               <YAxis yAxisId="delay" tickLine={false} axisLine={false} tickMargin={15} minTickGap={20} tickFormatter={(value) => `${value}ms`} />
+              {hasOffline && <YAxis yAxisId="offline" hide domain={[0, 1]} />}
               {activeCharts.length === 1 && (
                 <YAxis
                   yAxisId="packet-loss"
@@ -482,6 +523,15 @@ export const NetworkChartClient = React.memo(function NetworkChart({
                     formatter={(value, name) => {
                       let formattedValue: string
                       let label: string
+
+                      if (name === OFFLINE_KEY) {
+                        return (
+                          <div className="flex flex-1 items-center justify-between leading-none">
+                            <span className="text-muted-foreground">{t("monitor.offline")}</span>
+                            <span className="ml-2 font-medium text-foreground">--</span>
+                          </div>
+                        )
+                      }
 
                       if (name === "packet_loss") {
                         formattedValue = `${Number(value).toFixed(2)}%`
@@ -540,35 +590,267 @@ const transformData = (data: NezhaMonitor[]) => {
   return monitorData
 }
 
-const formatData = (rawData: NezhaMonitor[]) => {
+const formatData = (rawData: NezhaMonitor[], timeline: number[], observedSet: Set<number>) => {
   const result: { [time: number]: ResultItem } = {}
 
-  const allTimes = new Set<number>()
-  rawData.forEach((item) => {
-    item.created_at.forEach((time) => allTimes.add(time))
+  timeline.forEach((time) => {
+    result[time] = {
+      created_at: time,
+      [OFFLINE_KEY]: observedSet.has(time) ? null : 1,
+    }
   })
-
-  const allTimeArray = Array.from(allTimes).sort((a, b) => a - b)
 
   rawData.forEach((item) => {
     const { monitor_name, created_at, avg_delay } = item
-
-    // Calculate packet loss if not provided
     const packetLoss = item.packet_loss || calculatePacketLoss(avg_delay)
 
-    allTimeArray.forEach((time) => {
+    const valueMap = new Map<number, number | null>()
+    const packetLossMap = new Map<number, number | null>()
+
+    for (let i = 0; i < created_at.length; i++) {
+      valueMap.set(created_at[i], avg_delay[i])
+      if (packetLoss) {
+        packetLossMap.set(created_at[i], packetLoss[i])
+      }
+    }
+
+    timeline.forEach((time) => {
       if (!result[time]) {
-        result[time] = { created_at: time }
+        result[time] = {
+          created_at: time,
+          [OFFLINE_KEY]: observedSet.has(time) ? null : 1,
+        }
       }
 
-      const timeIndex = created_at.indexOf(time)
-      result[time][monitor_name] = timeIndex !== -1 ? avg_delay[timeIndex] : null
-      // Add packet loss data if available
+      result[time][monitor_name] = valueMap.has(time) ? valueMap.get(time)! : null
       if (packetLoss) {
-        result[time][`${monitor_name}_packet_loss`] = timeIndex !== -1 ? packetLoss[timeIndex] : null
+        result[time][`${monitor_name}_packet_loss`] = packetLossMap.has(time) ? packetLossMap.get(time)! : null
       }
     })
   })
 
   return Object.values(result).sort((a, b) => a.created_at - b.created_at)
+}
+
+type OfflineSpan = { start: number; end: number }
+
+const DEFAULT_INTERVAL_MS = 60 * 1000
+
+const getTimeRange = (data: NezhaMonitor[], rangeHours: number, from?: string, to?: string) => {
+  const parsedFrom = typeof from === "string" ? Date.parse(from) : Number.NaN
+  const parsedTo = typeof to === "string" ? Date.parse(to) : Number.NaN
+
+  let rangeStart = Number.isFinite(parsedFrom) ? parsedFrom : Number.NaN
+  let rangeEnd = Number.isFinite(parsedTo) ? parsedTo : Number.NaN
+
+  if (!Number.isFinite(rangeStart) || !Number.isFinite(rangeEnd) || rangeStart >= rangeEnd) {
+    let minTime = Number.POSITIVE_INFINITY
+    let maxTime = Number.NEGATIVE_INFINITY
+
+    data.forEach((item) => {
+      item.created_at.forEach((time) => {
+        if (time < minTime) minTime = time
+        if (time > maxTime) maxTime = time
+      })
+    })
+
+    if (!Number.isFinite(rangeStart) && Number.isFinite(minTime)) {
+      rangeStart = minTime
+    }
+    if (!Number.isFinite(rangeEnd) && Number.isFinite(maxTime)) {
+      rangeEnd = maxTime
+    }
+  }
+
+  if (!Number.isFinite(rangeStart) || !Number.isFinite(rangeEnd) || rangeStart >= rangeEnd) {
+    const safeHours = Math.max(1, Math.floor(rangeHours))
+    rangeEnd = Date.now()
+    rangeStart = rangeEnd - safeHours * 60 * 60 * 1000
+  }
+
+  return { rangeStart, rangeEnd }
+}
+
+const getMedianValue = (values: number[]) => {
+  const sorted = [...values].sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+}
+
+const getTypicalIntervalMs = (data: NezhaMonitor[]) => {
+  const deltas: number[] = []
+
+  data.forEach((item) => {
+    const times = item.created_at
+    for (let i = 1; i < times.length; i++) {
+      const delta = times[i] - times[i - 1]
+      if (delta > 0) {
+        deltas.push(delta)
+      }
+    }
+  })
+
+  if (!deltas.length) {
+    return DEFAULT_INTERVAL_MS
+  }
+
+  const median = getMedianValue(deltas)
+  const rounded = Math.round(median / 1000) * 1000
+  return Math.max(1000, rounded || median)
+}
+
+const buildExpectedTimes = (rangeStart: number, rangeEnd: number, intervalMs: number, anchor: number) => {
+  if (!Number.isFinite(rangeStart) || !Number.isFinite(rangeEnd) || intervalMs <= 0 || rangeStart >= rangeEnd) {
+    return []
+  }
+
+  let start = Number.isFinite(anchor) ? anchor : rangeStart
+  while (start - intervalMs >= rangeStart) {
+    start -= intervalMs
+  }
+
+  const times: number[] = []
+  for (let t = start; t <= rangeEnd; t += intervalMs) {
+    if (t >= rangeStart && t <= rangeEnd) {
+      times.push(t)
+    }
+  }
+
+  if (!times.length) {
+    return [rangeStart, rangeEnd].filter((time, index, arr) => Number.isFinite(time) && arr.indexOf(time) === index)
+  }
+
+  return times
+}
+
+const buildOfflineSpans = (expectedTimes: number[], observedSet: Set<number>, intervalMs: number, rangeEnd: number) => {
+  if (!expectedTimes.length || intervalMs <= 0) {
+    return []
+  }
+
+  const spans: OfflineSpan[] = []
+  let spanStart: number | null = null
+  let lastMissing: number | null = null
+
+  expectedTimes.forEach((time) => {
+    if (!observedSet.has(time)) {
+      if (spanStart === null) {
+        spanStart = time
+      }
+      lastMissing = time
+      return
+    }
+
+    if (spanStart !== null) {
+      const spanEnd = Math.min(rangeEnd, (lastMissing ?? spanStart) + intervalMs)
+      if (spanEnd > spanStart) {
+        spans.push({ start: spanStart, end: spanEnd })
+      }
+      spanStart = null
+      lastMissing = null
+    }
+  })
+
+  if (spanStart !== null) {
+    const spanEnd = Math.min(rangeEnd, (lastMissing ?? spanStart) + intervalMs)
+    if (spanEnd > spanStart) {
+      spans.push({ start: spanStart, end: spanEnd })
+    }
+  }
+
+  return spans
+}
+
+const buildTimelineData = (rawData: NezhaMonitor[], rangeStart: number, rangeEnd: number) => {
+  const observedSet = new Set<number>()
+
+  rawData.forEach((item) => {
+    item.created_at.forEach((time) => {
+      if (time >= rangeStart && time <= rangeEnd) {
+        observedSet.add(time)
+      }
+    })
+  })
+
+  const observedTimes = Array.from(observedSet).sort((a, b) => a - b)
+  const intervalMs = getTypicalIntervalMs(rawData)
+  const anchor = observedTimes.length > 0 ? observedTimes[0] : rangeStart
+  const expectedTimes = buildExpectedTimes(rangeStart, rangeEnd, intervalMs, anchor)
+
+  const timelineSet = new Set<number>(expectedTimes)
+  observedTimes.forEach((time) => timelineSet.add(time))
+
+  const timeline = Array.from(timelineSet).sort((a, b) => a - b)
+  const offlineSpans = buildOfflineSpans(expectedTimes, observedSet, intervalMs, rangeEnd)
+
+  return { timeline, offlineSpans, observedSet }
+}
+
+const buildTimeTicks = (rangeStart: number, rangeEnd: number) => {
+  if (!Number.isFinite(rangeStart) || !Number.isFinite(rangeEnd) || rangeStart >= rangeEnd) {
+    return []
+  }
+
+  const rangeMs = rangeEnd - rangeStart
+  const hours = rangeMs / (1000 * 60 * 60)
+  let stepMinutes = 60
+
+  if (hours <= 6) {
+    stepMinutes = 30
+  } else if (hours <= 12) {
+    stepMinutes = 60
+  } else if (hours <= 24) {
+    stepMinutes = 120
+  } else if (hours <= 48) {
+    stepMinutes = 240
+  } else {
+    stepMinutes = 360
+  }
+
+  const stepMs = stepMinutes * 60 * 1000
+  const start = new Date(rangeStart)
+  start.setSeconds(0, 0)
+
+  if (stepMinutes >= 60) {
+    start.setMinutes(0, 0, 0)
+    const stepHours = stepMinutes / 60
+    const hour = start.getHours()
+    const remainder = hour % stepHours
+    if (remainder !== 0) {
+      start.setHours(hour + (stepHours - remainder))
+    }
+  } else {
+    const minutes = start.getMinutes()
+    const remainder = minutes % stepMinutes
+    if (remainder !== 0) {
+      start.setMinutes(minutes + (stepMinutes - remainder))
+    }
+  }
+
+  const ticks: number[] = []
+  for (let t = start.getTime(); t <= rangeEnd; t += stepMs) {
+    if (t >= rangeStart && t <= rangeEnd) {
+      ticks.push(t)
+    }
+  }
+
+  if (!ticks.length) {
+    return [rangeStart, rangeEnd].filter((time, index, arr) => arr.indexOf(time) === index)
+  }
+
+  if (ticks[0] !== rangeStart) {
+    ticks.unshift(rangeStart)
+  }
+  if (ticks[ticks.length - 1] !== rangeEnd) {
+    ticks.push(rangeEnd)
+  }
+
+  return ticks
+}
+
+const formatTimeTick = (value: number) => {
+  const date = new Date(value)
+  const hours = date.getHours()
+  const minutes = String(date.getMinutes()).padStart(2, "0")
+  return `${hours}:${minutes}`
 }

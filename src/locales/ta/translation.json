@@ -99,6 +99,7 @@
     "avgDelay": "சுணக்கம்",
     "monitorCount": "சேவைகள்",
     "packetLoss": "தொகுப்பு இழப்பு",
+    "offline": "இணையமில்லாமல்",
     "clearSelections": "அழி"
   },
   "pwa": {

@@ -47,6 +47,7 @@
     "noData": "Kein Server Monitoring Daten, bitte fügen sie zuerst einen Monitor hinzu",
     "avgDelay": "Latenz",
     "packetLoss": "Paketverlust",
+    "offline": "Offline",
     "clearSelections": "Löschen"
   },
   "billingInfo": {

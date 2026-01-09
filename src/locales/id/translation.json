@@ -20,6 +20,9 @@
     "speed": "Kecepatan",
     "totalBandwidth": "Jumlah Bandwidth"
   },
+  "monitor": {
+    "offline": "Offline"
+  },
   "theme": {
     "light": "Terang",
     "dark": "Gelap"

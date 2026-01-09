@@ -116,6 +116,7 @@
     "avgDelay": "延遲",
     "monitorCount": "個監控",
     "packetLoss": "丟包率",
+    "offline": "離線",
     "clearSelections": "清除"
   },
   "billingInfo": {

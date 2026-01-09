@@ -81,6 +81,8 @@ export interface LoginUserResponse {
 export interface MonitorResponse {
   success: boolean
   data: NezhaMonitor[]
+  from?: string
+  to?: string
 }
 
 export type ServerMonitorChart = {

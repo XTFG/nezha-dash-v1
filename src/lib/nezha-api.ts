@@ -89,6 +89,9 @@ export const fetchMonitor = async (server_id: number, hours = 24): Promise<Monit
     throw new Error(km_monitors.error)
   }
 
+  const monitorFrom = typeof km_monitors?.from === "string" ? km_monitors.from : undefined
+  const monitorTo = typeof km_monitors?.to === "string" ? km_monitors.to : undefined
+
   // 将 km_monitors 转换为 NezhaMonitor[]
   const seriesByTask = new Map<number, NezhaMonitor>()
 
@@ -158,7 +161,7 @@ export const fetchMonitor = async (server_id: number, hours = 24): Promise<Monit
     }
   }
 
-  return { success: true, data }
+  return { success: true, data, from: monitorFrom, to: monitorTo }
 }
 // TODO
 export const fetchService = async (): Promise<ServiceResponse> => {

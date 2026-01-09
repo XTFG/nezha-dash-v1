@@ -106,6 +106,7 @@
     "avgDelay": "Задержка",
     "monitorCount": "Сервисы",
     "packetLoss": "Потеря пакетов",
+    "offline": "Оффлайн",
     "clearSelections": "Очистить"
   },
   "pwa": {

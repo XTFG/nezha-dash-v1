@@ -113,6 +113,7 @@
     "avgDelay": "Latency",
     "monitorCount": "Services",
     "packetLoss": "Packet Loss",
+    "offline": "Offline",
     "clearSelections": "Clear"
   },
   "pwa": {

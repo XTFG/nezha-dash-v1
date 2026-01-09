@@ -99,6 +99,7 @@
     "noData": "No hay datos de servidores, primero agregue un monitor de servicio",
     "monitorCount": "Servicios",
     "packetLoss": "Pérdida de paquetes",
+    "offline": "Fuerda de línea",
     "clearSelections": "Limpiar"
   },
   "error": {
